@@ -1,0 +1,5 @@
+      [paste.app_factory]
+      main = babytracker:main
+      [console_scripts]
+      populate_Babytracker = babytracker.scripts.populate:main
+      
