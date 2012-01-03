@@ -16,9 +16,9 @@ def main(global_config, **settings):
     DBSession.configure(bind=engine)
 
     # XXX - testing
-    if 'DATABASE_URL' in os.environ:
-        import babytracker.scripts.populate
-        babytracker.scripts.populate.runtime(engine)
+    # if 'DATABASE_URL' in os.environ:
+    #     import babytracker.scripts.populate
+    #     babytracker.scripts.populate.runtime(engine)
 
     config = Configurator(settings=settings)
     config.add_static_view('static', 'static', cache_max_age=3600)
