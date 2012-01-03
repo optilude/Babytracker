@@ -3,7 +3,7 @@ import os
 from pyramid.config import Configurator
 from sqlalchemy import engine_from_config
 
-from .models import DBSession
+from .models import DBSession, Base
 
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
@@ -15,10 +15,7 @@ def main(global_config, **settings):
     engine = engine_from_config(settings, 'sqlalchemy.')
     DBSession.configure(bind=engine)
 
-    # XXX - testing
-    # if 'DATABASE_URL' in os.environ:
-    #     import babytracker.scripts.populate
-    #     babytracker.scripts.populate.runtime(engine)
+    Base.metadata.create_all(engine)
 
     config = Configurator(settings=settings)
     config.add_static_view('static', 'static', cache_max_age=3600)
