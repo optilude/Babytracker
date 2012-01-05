@@ -1,11 +1,23 @@
 from pyramid.view import view_config
 
-from .models import (
-    DBSession,
-    MyModel,
-    )
+class MobileViews(object):
 
-@view_config(route_name='home', renderer='templates/mytemplate.pt')
-def my_view(request):
-    one = DBSession.query(MyModel).filter(MyModel.name=='one').first()
-    return {'one':one, 'project':'Babytracker'}
+    def __init__(self, request):
+        self.request = request
+
+    @view_config(route_name='mobile_home', renderer='templates/mobile_home.pt')
+    def home(self):
+
+        return {
+        }
+
+class DesktopViews(object):
+
+    def __init__(self, request):
+        self.request = request
+
+    @view_config(route_name='home', renderer='templates/home.pt')
+    def home(self):
+
+        return {
+        }

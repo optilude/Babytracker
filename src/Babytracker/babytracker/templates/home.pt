@@ -1,0 +1,25 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html
+  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  metal:use-macro="layout">
+<head>
+
+</head>
+<body>
+
+  <div metal:fill-slot="page_header">
+    <h1>Baby tracker <small>Home</small></h1>
+  </div>
+  <div class="row" metal:fill-slot="body">
+    <div class="span10">
+      <h2>Main content</h2>
+    </div>
+    <div class="span4">
+      <h3>Secondary content</h3>
+    </div>
+  </div>
+
+</body>
+</html>

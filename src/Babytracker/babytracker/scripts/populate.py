@@ -33,9 +33,3 @@ def main(argv=sys.argv):
     with transaction.manager:
         model = MyModel(name='one', value=1)
         DBSession.add(model)
-
-def runtime(engine):
-    Base.metadata.create_all(engine)
-    with transaction.manager:
-        model = MyModel(name='one', value=1)
-        DBSession.add(model)
