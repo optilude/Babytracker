@@ -19,15 +19,10 @@ class TestModel(unittest.TestCase):
         import transaction
         import hashlib
         import datetime
-        from babytracker.models import DBSession, User, Baby, EntryType, Entry
+        from babytracker.models import DBSession, User, Baby
+        from babytracker.models import BreastFeed, BottleFeed, MixedFeed, Sleep, Nappy
 
         with transaction.manager:
-
-            feed = EntryType(u"Feed", "A feeding")
-            nappy = EntryType(u"Nappy", "Nappy change")
-
-            DBSession.add(feed)
-            DBSession.add(nappy)
 
             user = User('test@example.org', u'John Smith', hashlib.sha1('secret').hexdigest())
             baby1 = Baby(datetime.date(2001,11,25), u"Jill Smith", 'f', user)
@@ -36,8 +31,21 @@ class TestModel(unittest.TestCase):
 
             self.assertEqual(user.babies, [baby1, baby2])
 
-            entry = Entry(feed, baby1, datetime.datetime.now(), amount=100, note=u"Bottle")
-            DBSession.add(entry)
+            breastFeed = BreastFeed(baby1, datetime.datetime.now(), datetime.timedelta(10))
+            bottleFeed = BottleFeed(baby1, datetime.datetime.now(), 100)
+            mixedFeed = MixedFeed(baby1, datetime.datetime.now(), datetime.timedelta(10), 100)
+            sleep = Sleep(baby1, datetime.datetime.now(), datetime.timedelta(30))
+            nappy = Nappy(baby1, datetime.datetime.now(), 'wet')
 
-            self.assertEqual(entry.baby, baby1)
-            self.assertEqual(entry.entry_type, feed)
+            DBSession.add(breastFeed)
+            DBSession.add(bottleFeed)
+            DBSession.add(mixedFeed)
+            DBSession.add(sleep)
+            DBSession.add(nappy)
+
+            self.assertEqual(breastFeed.baby, baby1)
+            self.assertEqual(bottleFeed.baby, baby1)
+            self.assertEqual(mixedFeed.baby, baby1)
+            self.assertEqual(sleep.baby, baby1)
+            self.assertEqual(nappy.baby, baby1)
+

@@ -6,7 +6,7 @@ from sqlalchemy import (
     Integer,
     Date,
     DateTime,
-    Time,
+    Interval,
     )
 
 from sqlalchemy.ext.declarative import declarative_base
@@ -57,40 +57,68 @@ class Baby(Base):
         self.gender = gender
         self.user = user
 
-class EntryType(Base):
-    __tablename__ = 'entry_types'
-
-    id = Column(Integer, primary_key=True)
-    title = Column(String)
-    description = Column(String)
-
-    def __init__(self, title, description):
-        self.title = title
-        self.description = description
-
 class Entry(Base):
     __tablename__ = 'entries'
 
-    id = Column(Integer, primary_key=True)
 
-    entry_type_id = Column(Integer, ForeignKey('entry_types.id'))
-    entry_type = relationship("EntryType")
+    id = Column(Integer, primary_key=True)
+    type = Column(String)
 
     baby_id = Column(Integer, ForeignKey('babies.id'))
     baby = relationship("Baby")
 
     start = Column(DateTime)
     end = Column(DateTime, nullable=True)
-    duration = Column(Time, nullable=True)
-
-    amount = Column(Integer, nullable=True)
     note = Column(String, nullable=True)
 
-    def __init__(self, entry_type, baby, start, end=None, duration=None, amount=None, note=None):
-        self.entry_type = entry_type
+    __mapper_args__ = {'polymorphic_on': type}
+
+    def __init__(self, baby, start, end=None, note=None):
         self.baby = baby
         self.start = start
         self.end = end
+        self.note = note
+
+class DurationEntry(Entry):
+    duration = Column(Interval)
+
+class AmountEntry(Entry):
+    amount = Column(Integer)
+
+class BreastFeed(DurationEntry):
+    __mapper_args__ = {'polymorphic_identity': 'breastfeed'}
+
+    def __init__(self, baby, start, duration, end=None, note=None):
+        super(BreastFeed, self).__init__(baby, start, end, note)
+        self.duration = duration
+
+class BottleFeed(AmountEntry):
+    __mapper_args__ = {'polymorphic_identity': 'bottlefeed'}
+
+    def __init__(self, baby, start, amount, end=None, note=None):
+        super(BottleFeed, self).__init__(baby, start, end, note)
+        self.amount = amount
+
+class MixedFeed(DurationEntry, AmountEntry):
+    __mapper_args__ = {'polymorphic_identity': 'mixedfeed'}
+
+    def __init__(self, baby, start, duration, amount, end=None, note=None):
+        super(MixedFeed, self).__init__(baby, start, end, note)
         self.duration = duration
         self.amount = amount
-        self.note = note
+
+class Sleep(DurationEntry):
+    __mapper_args__ = {'polymorphic_identity': 'sleep'}
+
+    def __init__(self, baby, start, duration, end=None, note=None):
+        super(Sleep, self).__init__(baby, start, end, note)
+        self.duration = duration
+
+class Nappy(Entry):
+    __mapper_args__ = {'polymorphic_identity': 'nappy'}
+
+    contents = Column(Enum('wet', 'dirty'))
+
+    def __init__(self, baby, start, contents, end=None, note=None):
+        super(Nappy, self).__init__(baby, start, end, note)
+        self.contents = contents
