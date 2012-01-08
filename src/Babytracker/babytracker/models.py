@@ -122,7 +122,7 @@ class Baby(Base):
     id = Column(Integer, primary_key=True)
     dob = Column(Date)
     name = Column(String)
-    gender = Column(Enum('m', 'f'))
+    gender = Column(Enum('m', 'f'), name='genders')
 
     user_id = Column(Integer, ForeignKey('users.id'))
     user = relationship("User", backref=backref('babies', order_by=id))
@@ -258,7 +258,7 @@ class Sleep(Entry):
 class NappyChange(Entry):
     __mapper_args__ = {'polymorphic_identity': 'nappy_change'}
 
-    contents = Column(Enum('wet', 'dirty', 'none'))
+    contents = Column(Enum('wet', 'dirty', 'none'), name='nappy_states')
 
     def __init__(self, baby, start, contents, end=None, note=None):
         super(NappyChange, self).__init__(baby, start, end, note)
