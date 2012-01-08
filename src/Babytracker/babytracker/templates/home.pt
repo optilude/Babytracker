@@ -13,46 +13,60 @@
     <h1>Baby tracker <small>Home</small></h1>
   </div>
   <div class="row" metal:fill-slot="body">
-    <div class="span10">
-      <h2>Introduction</h2>
-      <p>
-        Babytracker is a mobile and web application that can help you
-        keep track of what your baby or babies are doing each day. Through a
-        simple and intuitive user interface, you can record events such as when
-        and how much they eat and sleep, and when you have changed their
-        nappies.
-      </p>
-      <p class="image-box">
-        <img src="/static/babies.jpg" class="thumbnail" />
-      </p>
-      <p>
-        Please <a href="/signup">sign up</a> if you do not already have
-        an account. Otherwise, <a href="/login">please login in</a>.
-      </p>
-    </div>
-    <div class="span5">
-      <h3>About</h3>
-      <p>
-        Babytracker was created by father of twins and software developer
-        <a href="http://martinaspeli.net">Martin Aspeli</a>.
-      </p>
-      <p>
-        You are free to use the application, but please note that, like babies,
-        it comes with no warranty or guarantees. We will attempt to keep it running
-        and to take care of your data, but as long as the application
-        remains in <em>beta</em>, it may go down without notice.
-      </p>
-      <p>
-        Babytracker works best in modern browsers like
-        <a href="http://google.com/chrome">Google Chrome</a> or
-        <a href="http://getfirefox.com">Mozilla Firefox</a>.
-        There are no plans to test it on Microsoft Internet Explorer.
-      </p>
-      <p>
-        Feedback and comments are welcome. Please contact
-        <a href="mailto:optilude@gmail.com">optilude@gmail.com</a>.
-      </p>
-    </div>
+    <tal:block condition="not:authenticated_userid">
+      <div class="span10">
+        <h2>Introduction</h2>
+        <p>
+          Babytracker is a mobile and web application that can help you
+          keep track of what your baby or babies are doing each day. Through a
+          simple and intuitive user interface, you can record events such as when
+          and how much they eat and sleep, and when you have changed their
+          nappies.
+        </p>
+        <p class="image-box">
+          <img src="/static/babies.jpg" class="thumbnail" />
+        </p>
+        <p>
+          Please <a href="/signup">sign up</a> if you do not already have
+          an account. Otherwise, <a href="/login">please login in</a>.
+        </p>
+      </div>
+      <div class="span5">
+        <h3>About</h3>
+        <p>
+          Babytracker was created by father of twins and software developer
+          <a href="http://martinaspeli.net">Martin Aspeli</a>.
+        </p>
+        <p>
+          You are free to use the application, but please note that, like babies,
+          it comes with no warranty or guarantees. We will attempt to keep it running
+          and to take care of your data, but as long as the application
+          remains in <em>beta</em>, it may go down without notice.
+        </p>
+        <p>
+          Babytracker works best in modern browsers like
+          <a href="http://google.com/chrome">Google Chrome</a> or
+          <a href="http://getfirefox.com">Mozilla Firefox</a>.
+          There are no plans to test it on Microsoft Internet Explorer.
+        </p>
+        <p>
+          Feedback and comments are welcome. Please contact
+          <a href="mailto:optilude@gmail.com">optilude@gmail.com</a>.
+        </p>
+      </div>
+    </tal:block>
+    <tal:block condition="authenticated_userid">
+      <div class="span16">
+        <h2>Welcome</h2>
+        <p>
+          Thank you for using Babytracker. Use the navigation bar
+          along the top to record entries and analyst past behaviour.
+        </p>
+        <p class="image-box">
+          <img src="/static/sleep.jpg" class="thumbnail" />
+        </p>
+      </div>
+    </tal:block>
   </div>
 
 </body>

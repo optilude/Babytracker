@@ -3,17 +3,16 @@ from datetime import timedelta
 
 from sqlalchemy import Column, ForeignKey, desc
 from sqlalchemy import  String, Enum, Integer, Date, DateTime, Interval
-
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.ext.declarative import declarative_base
-
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.ext.declarative import declarative_base
 
 from zope.sqlalchemy import ZopeTransactionExtension
 
 from pyramid.security import Allow, DENY_ALL
-from babytracker.security import VIEW_PERMISSION, EDIT_PERMISSION
+
+from babytracker.interfaces import VIEW_PERMISSION, EDIT_PERMISSION
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
@@ -23,7 +22,7 @@ class _Root(object):
     """
 
     # Singleton factory
-    def __call__(self):
+    def __call__(self, request=None):
         return self
 
     # Traversal

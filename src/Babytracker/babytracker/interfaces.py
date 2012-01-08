@@ -1,5 +1,10 @@
 from zope.interface import Interface
 
+# Constants
+
+VIEW_PERMISSION = 'view'
+EDIT_PERMISSION = 'edit'
+
 # Request markers
 
 class IMobileRequest(Interface):

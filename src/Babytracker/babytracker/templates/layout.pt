@@ -23,12 +23,22 @@
           <a class="brand" href="/">Babytracker <span class="label important">Beta</span></a>
           <ul class="nav">
             <li tal:attributes="class python:request.path == '/' and 'active' or None"><a href="/">Home</a></li>
-            <li tal:attributes="class python:request.path == '/signup' and 'active' or None"><a href="/signup">Sign up</a></li>
+            <li tal:condition="not:authenticated_userid" tal:attributes="class python:request.path == '/signup' and 'active' or None"><a href="/signup">Sign up</a></li>
           </ul>
-          <form action="" class="pull-right">
-            <input class="input-small" type="text" placeholder="Username">
-            <input class="input-small" type="password" placeholder="Password">
-            <button class="btn" type="submit">Log in</button>
+          <div class="pull-right" tal:condition="authenticated_userid">
+            <ul class="nav">
+              <li>
+                <a href="/${authenticated_userid}" tal:content="authenticated_userid">Account</a>
+              </li>
+              <li>
+                <a href="/logout">Log out</a>
+              </li>
+            </ul>
+          </div>
+          <form method="post" action="/login" class="pull-right" tal:condition="not:authenticated_userid">
+            <input name="email" class="input-medium" type="text" placeholder="Email address">
+            <input name="password" class="input-small" type="password" placeholder="Password">
+            <button class="btn" name="btn.login" type="submit">Log in</button>
           </form>
         </div>
       </div>

@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html
+  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  metal:use-macro="layout">
+<head>
+
+</head>
+<body>
+
+  <div metal:fill-slot="page_header">
+    <h1>Log in <small>to use the application</small></h1>
+  </div>
+  <div class="row" metal:fill-slot="body">
+    <div class="span10">
+
+      <div class="alert-message error" tal:condition="headline_error">
+        <p tal:content="headline_error" />
+      </div>
+
+      <form method="post" action="/login">
+        <fieldset>
+          <div tal:attributes="class errors.get('email', None) is None and 'clearfix' or 'clearfix error'">
+            <label for="email">Email address</label>
+            <div class="input">
+              <input type="email" name="email" required="required" value="${request.POST.get('email', '')}" />
+              <span class="help-inline" tal:content="errors.get('email', '')" />
+            </div>
+          </div>
+          <div tal:attributes="class errors.get('password', None) is None and 'clearfix' or 'clearfix error'">
+            <label for="password">Password</label>
+            <div class="input">
+              <input  type="password" name="password" required="required" value="" />
+              <span class="help-inline" tal:content="errors.get('password', '')" />
+            </div>
+          </div>
+          <div class="actions">
+            <input type="submit" class="btn large primary" name="btn.login" value="Log in" />
+          </div>
+        </fieldset>
+      </form>
+    </div>
+    <div class="span5">
+      <h3>Log in</h3>
+      <p>
+        Please use the email address and password you registered
+        with when you signed up to log in.
+      </p>
+      <p>
+        If you do not already have an account you can
+        <a href="/signup">sign up for one</a>.
+      </p>
+      <!-- TODO: Password recovery -->
+    </div>
+  </div>
+
+</body>
+</html>

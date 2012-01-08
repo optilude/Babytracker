@@ -1,4 +1,7 @@
 from pyramid.view import view_config, view_defaults
+from pyramid.security import remember, forget
+from pyramid.httpexceptions import HTTPFound
+
 from babytracker.interfaces import IMobileRequest
 from babytracker.interfaces import IDesktopRequest
 
@@ -70,11 +73,55 @@ class DesktopViews(object):
                 user = models.User(email, name, password)
                 session.add(user)
 
-                # TODO: Log in and redirect
-
                 self.request.session.flash('Account created. You are now logged in.', queue='success')
+                headers = remember(self.request, user.__name__)
+
+                # TODO: Redirect to entry screen
+                return HTTPFound(location='/', headers=headers)
 
         return {
             'errors': errors,
             'headline_error': headline_error,
         }
+
+    @view_config(name='login', request_type=IDesktopRequest, renderer='templates/login.pt')
+    def login(self):
+        headline_error = None
+        errors = {}
+
+        post = self.request.POST
+        if 'btn.login' in post:
+            email = post.get('email', None)
+            password = post.get('password', None)
+
+            if not email:
+                errors['email'] = u"Email is required"
+            elif not '@' in email: # crude, we know
+                errors['email'] = u"Invalid email address"
+            if not password:
+                errors['password'] = u"Password is required"
+
+            if errors:
+                headline_error = u"Invalid information entered. Please see below for details."
+            else:
+                user = models.User.authenticate(email, password)
+                if user is None:
+                    headline_error = u"Incorrect email address or password. Please try again."
+                else:
+                    headers = remember(self.request, user.__name__)
+
+                    self.request.session.flash('You are now logged in.', queue='success')
+
+                    # TODO: Redirect to entry screen
+                    return HTTPFound(location='/', headers=headers)
+
+        return {
+            'errors': errors,
+            'headline_error': headline_error,
+        }
+
+    @view_config(name='logout', request_type=IDesktopRequest)
+    def logout(self):
+        self.request.session.flash('You are now logged out.', queue='success')
+        headers = forget(self.request)
+        return HTTPFound(location='/', headers=headers)

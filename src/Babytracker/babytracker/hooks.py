@@ -8,6 +8,8 @@ from pyramid.events import subscriber
 from pyramid.events import NewRequest
 from pyramid.events import BeforeRender
 
+from pyramid.security import authenticated_userid
+
 from babytracker.interfaces import IMobileRequest
 from babytracker.interfaces import IDesktopRequest
 
@@ -39,3 +41,7 @@ def add_base_template(event):
     else:
         layout = get_renderer('templates/layout.pt').implementation()
         event.update({'layout': layout})
+
+@subscriber(BeforeRender)
+def add_login_status(event):
+    event.update({'authenticated_userid': authenticated_userid(event['request'])})
