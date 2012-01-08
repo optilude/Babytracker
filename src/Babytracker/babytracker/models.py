@@ -259,3 +259,8 @@ class NappyChange(Entry):
     def __init__(self, baby, start, contents, end=None, note=None):
         super(NappyChange, self).__init__(baby, start, end, note)
         self.contents = contents
+
+# TODO: Other types of entries:
+# - solid foods
+# - play
+# - development milestone

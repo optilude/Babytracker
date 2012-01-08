@@ -1,6 +1,8 @@
 import os
 
 from pyramid.config import Configurator
+from pyramid.session import UnencryptedCookieSessionFactoryConfig
+
 from sqlalchemy import engine_from_config
 
 from babytracker.models import DBSession, Base
@@ -20,7 +22,9 @@ def main(global_config, **settings):
 
     setup_database(settings)
 
-    config = Configurator(settings=settings)
+    session_factory = UnencryptedCookieSessionFactoryConfig(settings.get('session-secret', 'secret'))
+
+    config = Configurator(settings=settings, session_factory=session_factory)
 
     config.add_static_view('static', 'static', cache_max_age=3600)
 
