@@ -1,0 +1,185 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html
+  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  metal:use-macro="layout">
+<head>
+
+<metal:block fill-slot="head">
+<script type="text/javascript">
+jQuery(function($) {
+
+  $(document).ready(function() {
+    $(".date").dateinput({
+      format: 'yyyy-mm-dd',
+    });
+  });
+
+});
+</script>
+</metal:block>
+
+</head>
+<body>
+
+  <div metal:fill-slot="page_header">
+    <h1>Your account <small>${context.email}</small></h1>
+  </div>
+  <div class="row" metal:fill-slot="body">
+    <div class="span8">
+
+      <h2>You</h2>
+
+      <p>
+        You can edit your personal details and change
+        your password below.
+      </p>
+
+      <div class="row padded">
+        <div class="span2">
+          <span for="name">Email address</span>
+        </div>
+        <div class="span4">
+          <span class="uneditable-input">${context.email}</span>
+        </div>
+      </div>
+      <div class="row padded">
+        <div class="span2">
+          <span for="name">Your name</span>
+        </div>
+        <div class="span4">
+          <span class="uneditable-input">${context.name}</span>
+        </div>
+        <div class="span2">
+          <a class="btn info" data-controls-modal="edit-name" data-backdrop="static" data-keyboard="true">Edit</a>
+        </div>
+      </div>
+
+      <div class="row padded">
+        <div class="span2">
+          &nbsp;
+        </div>
+        <div class="span4">
+          <a class="btn danger" data-controls-modal="change-password" data-backdrop="static" data-keyboard="true">Change password</a>
+        </div>
+      </div>
+
+    </div>
+    <div class="span8">
+      <h2>Your babies</h2>
+      <p tal:condition="len(context.babies) == 0">
+        You have not registered any babies yet. Click
+        <strong>Add baby</strong> to do so.
+      </p>
+
+      <dl>
+        <tal:block repeat="baby context.babies">
+          <dt>${baby.name}</dt>
+          <dd>
+            <span tal:condition="baby.gender == 'm'">Boy</span>
+            <span tal:condition="baby.gender == 'f'">Girl</span>
+            <span>born ${baby.dob}</span>
+          </dd>
+        </tal:block>
+      </dl>
+
+      <div id="add-baby-panel">
+        <a class="btn info" data-controls-modal="add-baby" data-backdrop="static" data-keyboard="true">Add baby</a>
+      </div>
+
+    </div>
+
+    <!-- Modals -->
+    <div id="edit-name" class="modal hide fade" style="display: none; ">
+      <div class="modal-header">
+        <a href="#" class="close">×</a>
+        <h3>Change name</h3>
+      </div>
+      <form method="post" action="${request.resource_url(context)}">
+        <div class="modal-body">
+          <div tal:attributes="class errors.get('name', None) is None and 'clearfix' or 'clearfix error'">
+            <label for="name">Your name</label>
+            <div class="input">
+              <input  type="text" name="name" required="required" value="${request.POST.get('name', context.name)}" />
+              <span class="help-inline">${errors.get('name', '')}</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <input type="submit" class="btn primary" name="btn.save" value="Save" />
+        </div>
+      </form>
+    </div>
+
+    <div id="change-password" class="modal hide fade" style="display: none; ">
+      <div class="modal-header">
+        <a href="#" class="close">×</a>
+        <h3>Change password</h3>
+      </div>
+      <form method="post" action="${request.resource_url(context)}">
+        <div class="modal-body">
+          <div tal:attributes="class errors.get('password', None) is None and 'clearfix' or 'clearfix error'">
+            <label for="password">Password</label>
+            <div class="input">
+              <input  type="password" name="password" required="required" value="" />
+              <span class="help-inline">${errors.get('password', '')}</span>
+            </div>
+          </div>
+          <div tal:attributes="class errors.get('confirm_password', None) is None and 'clearfix' or 'clearfix error'">
+            <label for="confirm_password">Confirm password</label>
+            <div class="input">
+              <input  type="password" name="confirm_password" required="required" value="" />
+              <span class="help-inline">${errors.get('confirm_password', '')}</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <input type="submit" class="btn primary" name="btn.change_password" value="Change" />
+        </div>
+      </form>
+    </div>
+
+    <div id="add-baby" class="modal hide fade" style="display: none; ">
+      <div class="modal-header">
+        <a href="#" class="close">×</a>
+        <h3>Add baby</h3>
+      </div>
+      <form method="post" action="${request.resource_url(context)}">
+        <div class="modal-body">
+          <div tal:attributes="class errors.get('baby_name', None) is None and 'clearfix' or 'clearfix error'">
+            <label for="baby_name">Name</label>
+            <div class="input">
+              <input type="text" name="baby_name" required="required" value="" />
+              <span class="help-inline">${errors.get('baby_name', '')}</span>
+            </div>
+          </div>
+          <div tal:attributes="class errors.get('baby_gender', None) is None and 'clearfix' or 'clearfix error'">
+            <label for="baby_gender">Gender</label>
+            <div class="input">
+              <select name="baby_gender" size="1">
+                <option value="m">Boy</option>
+                <option value="f">Girl</option>
+              </select>
+              <span class="help-inline">${errors.get('baby_gender', '')}</span>
+            </div>
+          </div>
+          <div tal:attributes="class errors.get('baby_dob', None) is None and 'clearfix' or 'clearfix error'">
+            <label for="baby_dob">Date of birth</label>
+            <div class="input">
+              <input type="date" name="baby_dob" class="date" required="required" value="" />
+              <span class="help-inline">${errors.get('baby_dob', '')}</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <input type="submit" class="btn primary" name="btn.add_baby" value="Add" />
+        </div>
+      </form>
+    </div>
+
+
+  </div>
+
+</body>
+</html>

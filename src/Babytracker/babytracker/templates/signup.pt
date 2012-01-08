@@ -15,38 +15,34 @@
   <div class="row" metal:fill-slot="body">
     <div class="span10">
 
-      <div class="alert-message error" tal:condition="headline_error">
-        <p tal:content="headline_error" />
-      </div>
-
       <form method="post" action="/signup">
         <fieldset>
           <div tal:attributes="class errors.get('email', None) is None and 'clearfix' or 'clearfix error'">
             <label for="email">Email address</label>
             <div class="input">
               <input type="email" name="email" required="required" value="${request.POST.get('email', '')}" />
-              <span class="help-inline" tal:content="errors.get('email', '')" />
+              <span class="help-inline">${errors.get('email', '')}</span>
             </div>
           </div>
           <div tal:attributes="class errors.get('name', None) is None and 'clearfix' or 'clearfix error'">
             <label for="name">Your name</label>
             <div class="input">
               <input  type="text" name="name" required="required" value="${request.POST.get('name','')}" />
-              <span class="help-inline" tal:content="errors.get('name', '')" />
+              <span class="help-inline">${errors.get('name', '')}</span>
             </div>
           </div>
           <div tal:attributes="class errors.get('password', None) is None and 'clearfix' or 'clearfix error'">
             <label for="password">Password</label>
             <div class="input">
               <input  type="password" name="password" required="required" value="" />
-              <span class="help-inline" tal:content="errors.get('password', '')" />
+              <span class="help-inline">${errors.get('password', '')}</span>
             </div>
           </div>
           <div tal:attributes="class errors.get('confirm_password', None) is None and 'clearfix' or 'clearfix error'">
             <label for="confirm_password">Confirm password</label>
             <div class="input">
               <input  type="password" name="confirm_password" required="required" value="" />
-              <span class="help-inline" tal:content="errors.get('confirm_password', '')" />
+              <span class="help-inline">${errors.get('confirm_password', '')}</span>
             </div>
           </div>
           <div class="actions">

@@ -36,3 +36,15 @@ body {
 .image-box img {
   width: 100%;
 }
+
+.actions {
+  background-color: transparent;
+}
+
+.fakeform .input {
+  margin-left: 150px;
+}
+
+.row.padded {
+  padding-top: 10px;
+}

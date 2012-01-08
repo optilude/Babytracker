@@ -18,7 +18,7 @@ class TestModel(unittest.TestCase):
     def test_user(self):
         import transaction
         import hashlib
-        from babytracker.models import ROOT, DBSession, User
+        from babytracker.models import Root, DBSession, User
         from pyramid.security import Allow, DENY_ALL
 
         with transaction.manager:
@@ -32,7 +32,7 @@ class TestModel(unittest.TestCase):
             self.assertEqual(user.name, u'John Smith')
             self.assertEqual(user.password, hashlib.sha1('secret').hexdigest())
             self.assertEqual(user.__name__, u'test@example.org')
-            self.assertEqual(user.__parent__, ROOT)
+            self.assertEqual(user.__parent__, Root())
 
             self.assertEqual(user.__acl__, [
                 (Allow, u'test@example.org', ('view', 'edit',)),
@@ -115,9 +115,14 @@ class TestModel(unittest.TestCase):
             self.assertEqual(baby1.__name__, u"jill-smith")
             self.assertEqual(baby1.__parent__, user)
 
+    def test_root_singleton(self):
+        from babytracker.models import Root
+
+        self.assertTrue(Root() is Root())
+
     def test_root_traversal(self):
         import transaction
-        from babytracker.models import ROOT, DBSession, User
+        from babytracker.models import Root, DBSession, User
 
         with transaction.manager:
 
@@ -126,9 +131,11 @@ class TestModel(unittest.TestCase):
             user = User(u'test@example.org', u'John Smith', 'secret')
             session.add(user)
 
-            self.assertEqual(ROOT['test@example.org'], user)
-            self.assertRaises(KeyError, ROOT.__getitem__, 'foo@bar.com')
-            self.assertRaises(KeyError, ROOT.__getitem__, 'frobble')
+            root = Root()
+
+            self.assertEqual(root['test@example.org'], user)
+            self.assertRaises(KeyError, root.__getitem__, 'foo@bar.com')
+            self.assertRaises(KeyError, root.__getitem__, 'frobble')
 
     def test_user_traversal(self):
         import transaction

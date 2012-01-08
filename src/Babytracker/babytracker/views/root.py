@@ -2,41 +2,25 @@ from pyramid.view import view_config, view_defaults
 from pyramid.security import remember, forget
 from pyramid.httpexceptions import HTTPFound
 
-from babytracker.interfaces import IMobileRequest
 from babytracker.interfaces import IDesktopRequest
-
 from babytracker import models
 
 # Until https://github.com/Pylons/pyramid/issues/394 is released
-# @view_defaults(request_type=IMobileRequest)
-class MobileViews(object):
+# @view_defaults(for_=models.Root, request_type=IDesktopRequest)
+class RootViews(object):
 
     def __init__(self, request):
         self.request = request
 
-    @view_config(name='', request_type=IMobileRequest, renderer='templates/mobile_home.pt')
+    @view_config(name='', context=models.Root, request_type=IDesktopRequest, renderer='babytracker:templates/home.pt')
     def home(self):
 
         return {
         }
 
-# Until https://github.com/Pylons/pyramid/issues/394 is released
-# @view_defaults(request_type=IDesktopRequest)
-class DesktopViews(object):
-
-    def __init__(self, request):
-        self.request = request
-
-    @view_config(name='', request_type=IDesktopRequest, renderer='templates/home.pt')
-    def home(self):
-
-        return {
-        }
-
-    @view_config(name='signup', request_type=IDesktopRequest, renderer='templates/signup.pt')
+    @view_config(name='signup', context=models.Root, request_type=IDesktopRequest, renderer='babytracker:templates/signup.pt')
     def signup(self):
 
-        headline_error = None
         errors = {}
 
         post = self.request.POST
@@ -54,19 +38,18 @@ class DesktopViews(object):
                 errors['name'] = u"Name is required"
             if not password:
                 errors['password'] = u"Password is required"
-                errors['confirm_password'] = u"Password confirmation is required"
             elif password != confirm_password:
                 errors['password'] = errors['confirm_password'] = u"Passwords do not match"
 
             if errors:
-                headline_error = u"Invalid information entered. Please see below for details."
+                self.request.session.flash(u"Invalid information entered. Please see below for details.", queue='error')
 
             session = models.DBSession()
             if not errors:
                 existing_user = session.query(models.User).filter_by(email=email).first()
                 if existing_user is not None:
                     # TODO: Offer password recovery
-                    headline_error = u"A user with this email address already exists. Please use a different one"
+                    self.request.session.flash(u"A user with this email address already exists. Please use a different one", queue='error')
                     errors['email'] = u""
 
             if not errors:
@@ -76,17 +59,14 @@ class DesktopViews(object):
                 self.request.session.flash('Account created. You are now logged in.', queue='success')
                 headers = remember(self.request, user.__name__)
 
-                # TODO: Redirect to entry screen
-                return HTTPFound(location='/', headers=headers)
+                return HTTPFound(location=self.request.resource_url(user), headers=headers)
 
         return {
             'errors': errors,
-            'headline_error': headline_error,
         }
 
-    @view_config(name='login', request_type=IDesktopRequest, renderer='templates/login.pt')
+    @view_config(name='login', context=models.Root, request_type=IDesktopRequest, renderer='babytracker:templates/login.pt')
     def login(self):
-        headline_error = None
         errors = {}
 
         post = self.request.POST
@@ -102,11 +82,11 @@ class DesktopViews(object):
                 errors['password'] = u"Password is required"
 
             if errors:
-                headline_error = u"Invalid information entered. Please see below for details."
+                self.request.session.flash(u"Invalid information entered. Please see below for details.", queue='error')
             else:
                 user = models.User.authenticate(email, password)
                 if user is None:
-                    headline_error = u"Incorrect email address or password. Please try again."
+                    self.request.session.flash(u"Incorrect email address or password. Please try again.", queue='error')
                 else:
                     headers = remember(self.request, user.__name__)
 
@@ -116,11 +96,10 @@ class DesktopViews(object):
                     return HTTPFound(location='/', headers=headers)
 
         return {
-            'errors': errors,
-            'headline_error': headline_error,
+            'errors': errors
         }
 
-    @view_config(name='logout', request_type=IDesktopRequest)
+    @view_config(name='logout', context=models.Root, request_type=IDesktopRequest)
     def logout(self):
         self.request.session.flash('You are now logged out.', queue='success')
         headers = forget(self.request)

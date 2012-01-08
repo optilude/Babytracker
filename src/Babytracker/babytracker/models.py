@@ -17,13 +17,18 @@ from babytracker.interfaces import VIEW_PERMISSION, EDIT_PERMISSION
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
-class _Root(object):
+class Root(object):
     """Root factory
     """
 
-    # Singleton factory
-    def __call__(self, request=None):
-        return self
+    _instance = None
+
+    # Singleton factory - this class has no state anyway, but want to be
+    # able to record lineage to it via ``__parent__``
+    def __new__(cls, request=None):
+        if cls._instance is None:
+            cls._instance = object.__new__(cls)
+        return cls._instance
 
     # Traversal
 
@@ -45,8 +50,6 @@ class _Root(object):
     __acl__ = [
             DENY_ALL,
         ]
-
-ROOT = _Root()
 
 class User(Base):
     __tablename__ = 'users'
@@ -94,7 +97,9 @@ class User(Base):
     def __name__(self):
         return self.email
 
-    __parent__ = ROOT
+    @property
+    def __parent__(self):
+        return Root()
 
     def __getitem__(self, name):
         for baby in self.babies:

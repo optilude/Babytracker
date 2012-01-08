@@ -7,9 +7,18 @@
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
   <link rel="stylesheet" href="${request.static_url('babytracker:static/bootstrap/bootstrap.min.css')}" type="text/css" media="screen" charset="utf-8" />
   <link rel="stylesheet" href="${request.static_url('babytracker:static/babytracker.css')}" type="text/css" media="screen" charset="utf-8" />
+  <link rel="stylesheet" href="${request.static_url('babytracker:static/dateinput.css')}" type="text/css" media="screen" charset="utf-8" />
 
   <script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
+  <script src="${request.static_url('babytracker:static/jquery.tools.min.js')}"></script>
+
   <script src="${request.static_url('babytracker:static/bootstrap/js/bootstrap-alerts.js')}"></script>
+  <script src="${request.static_url('babytracker:static/bootstrap/js/bootstrap-twipsy.js')}"></script>
+  <script src="${request.static_url('babytracker:static/bootstrap/js/bootstrap-popover.js')}"></script>
+  <script src="${request.static_url('babytracker:static/bootstrap/js/bootstrap-modal.js')}"></script>
+
+  <metal:block define-slot="head" />
+
   <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
     <!--[if lt IE 9]>
       <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
@@ -22,13 +31,15 @@
         <div class="container">
           <a class="brand" href="/">Babytracker <span class="label important">Beta</span></a>
           <ul class="nav">
-            <li tal:attributes="class python:request.path == '/' and 'active' or None"><a href="/">Home</a></li>
-            <li tal:condition="not:authenticated_userid" tal:attributes="class python:request.path == '/signup' and 'active' or None"><a href="/signup">Sign up</a></li>
+            <li class="${request.path == '/' and 'active' or None}"><a href="/">Home</a></li>
+            <li class="${request.path == '/signup' and 'active' or None}" tal:condition="not:authenticated_userid">
+              <a href="/signup">Sign up</a>
+            </li>
           </ul>
           <div class="pull-right" tal:condition="authenticated_userid">
             <ul class="nav">
-              <li>
-                <a href="/${authenticated_userid}" tal:content="authenticated_userid">Account</a>
+              <li class="${request.path == '/%s/' % authenticated_userid and 'active' or None}">
+                <a href="/${authenticated_userid}/">${authenticated_userid}</a>
               </li>
               <li>
                 <a href="/logout">Log out</a>
@@ -36,7 +47,7 @@
             </ul>
           </div>
           <form method="post" action="/login" class="pull-right" tal:condition="not:authenticated_userid">
-            <input name="email" class="input-medium" type="text" placeholder="Email address">
+            <input name="email" class="input-medium" type="email" placeholder="Email address">
             <input name="password" class="input-small" type="password" placeholder="Password">
             <button class="btn" name="btn.login" type="submit">Log in</button>
           </form>
@@ -53,19 +64,19 @@
         <metal:block define-slot="notices">
           <div class="alert-message success" data-alert="alert" tal:repeat="msg request.session.pop_flash('success')">
             <a class="close" href="#">×</a>
-            <p  tal:content="msg" />
+            <p>${msg}</p>
           </div>
           <div class="alert-message info" data-alert="alert" tal:repeat="msg request.session.pop_flash('info')">
             <a class="close" href="#">×</a>
-            <p tal:content="msg" />
+            <p>${msg}</p>
           </div>
           <div class="alert-message warning" data-alert="alert" tal:repeat="msg request.session.pop_flash('warning')">
             <a class="close" href="#">×</a>
-            <p tal:content="msg" />
+            <p>${msg}</p>
           </div>
           <div class="alert-message error" data-alert="alert" tal:repeat="msg request.session.pop_flash('error')">
             <a class="close" href="#">×</a>
-            <p tal:content="msg" />
+            <p>${msg}</p>
           </div>
         </metal:block>
         <metal:block define-slot="body">

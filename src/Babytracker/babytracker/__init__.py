@@ -8,7 +8,7 @@ from pyramid.authorization import ACLAuthorizationPolicy
 
 from sqlalchemy import engine_from_config
 
-from babytracker.models import DBSession, Base, ROOT
+from babytracker.models import DBSession, Base, Root
 from babytracker.security import validate_user
 
 def setup_database(settings):
@@ -38,7 +38,7 @@ def main(global_config, **settings):
 
     config = Configurator(
         settings=settings,
-        root_factory=ROOT,
+        root_factory=Root,
         session_factory=session_factory,
         authentication_policy=authn_policy,
         authorization_policy=authz_policy

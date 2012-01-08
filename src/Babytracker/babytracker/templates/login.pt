@@ -15,24 +15,20 @@
   <div class="row" metal:fill-slot="body">
     <div class="span10">
 
-      <div class="alert-message error" tal:condition="headline_error">
-        <p tal:content="headline_error" />
-      </div>
-
       <form method="post" action="/login">
         <fieldset>
           <div tal:attributes="class errors.get('email', None) is None and 'clearfix' or 'clearfix error'">
             <label for="email">Email address</label>
             <div class="input">
               <input type="email" name="email" required="required" value="${request.POST.get('email', '')}" />
-              <span class="help-inline" tal:content="errors.get('email', '')" />
+              <span class="help-inline">${errors.get('email', '')}</span>
             </div>
           </div>
           <div tal:attributes="class errors.get('password', None) is None and 'clearfix' or 'clearfix error'">
             <label for="password">Password</label>
             <div class="input">
               <input  type="password" name="password" required="required" value="" />
-              <span class="help-inline" tal:content="errors.get('password', '')" />
+              <span class="help-inline">${errors.get('password', '')}</span>
             </div>
           </div>
           <div class="actions">
