@@ -1,0 +1,2 @@
+VIEW_PERMISSION = 'view'
+EDIT_PERMISSION = 'edit'
