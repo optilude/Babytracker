@@ -2,11 +2,10 @@ from pyramid.view import view_config, view_defaults
 from pyramid.security import remember, forget
 from pyramid.httpexceptions import HTTPFound
 
-from babytracker.interfaces import IDesktopRequest
 from babytracker.interfaces import SIGNUP_PERMISSION
 from babytracker import models
 
-@view_defaults(context=models.Root, request_type=IDesktopRequest)
+@view_defaults(context=models.Root)
 class RootViews(object):
 
     def __init__(self, request):
@@ -98,7 +97,7 @@ class RootViews(object):
             'errors': errors
         }
 
-    @view_config(name='logout', context=models.Root, request_type=IDesktopRequest)
+    @view_config(name='logout')
     def logout(self):
         self.request.session.flash('You are now logged out.', queue='success')
         headers = forget(self.request)

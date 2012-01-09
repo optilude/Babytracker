@@ -1,12 +1,11 @@
 from pyramid.view import view_config, view_defaults
 
-from babytracker.interfaces import IDesktopRequest
 from babytracker.interfaces import VIEW_PERMISSION
 from babytracker import models
 
 import dateutil.parser
 
-@view_defaults(context=models.User, request_type=IDesktopRequest)
+@view_defaults(context=models.User)
 class UserViews(object):
 
     def __init__(self, request):

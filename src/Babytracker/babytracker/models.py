@@ -42,9 +42,7 @@ class Root(object):
 
         session = DBSession()
         try:
-            user = session.query(User).filter_by(email=name).one()
-            user.__parent__ = self
-            return user
+            return session.query(User).filter_by(email=name).one()
         except NoResultFound:
             raise KeyError(name)
 
@@ -106,12 +104,7 @@ class User(Base):
 
     @property
     def __parent__(self):
-        if self._parent is None:
-            self._parent = Root()
-        return self._parent
-    @__parent__.setter
-    def __parent__(self, value):
-        self._parent = value
+        return Root()
 
     def __getitem__(self, name):
         for baby in self.babies:
