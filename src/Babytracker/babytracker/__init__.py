@@ -7,7 +7,7 @@ from pyramid.session import UnencryptedCookieSessionFactoryConfig
 
 from sqlalchemy import engine_from_config
 
-from babytracker.models import DBSession, Base, Root, APIRoot
+from babytracker.models import DBSession, Base, Root
 from babytracker.security import validate_user
 
 def setup_database(settings):
@@ -45,7 +45,7 @@ def main(global_config, **settings):
 
     config.add_static_view('static', 'static', cache_max_age=3600)
 
-    config.add_route('api', '/api/*traverse', factory=APIRoot)
+    config.add_route('api', '/api/*traverse')
 
     config.scan()
     return config.make_wsgi_app()

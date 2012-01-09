@@ -1,17 +1,16 @@
 from pyramid.view import view_config, view_defaults
 from pyramid.security import remember, forget
 
-from babytracker.interfaces import IAPIRequest
 from babytracker.interfaces import VIEW_PERMISSION, EDIT_PERMISSION, SIGNUP_PERMISSION
 from babytracker import models
 
-@view_defaults(context=models.APIRoot, renderer='json')
+@view_defaults(context=models.Root, route_name='api', renderer='json')
 class RootAPI(object):
 
     def __init__(self, request):
         self.request = request
 
-    @view_config(name='', request_method='GET')
+    @view_config(request_method='GET')
     def index(self):
         """Discover services
 
@@ -83,7 +82,7 @@ class RootAPI(object):
 
         return {}
 
-@view_defaults(context=models.User, renderer='json')
+@view_defaults(context=models.User, route_name='api', renderer='json')
 class UserAPI(object):
 
     def __init__(self, request):
@@ -180,7 +179,7 @@ class UserAPI(object):
 
         return {}
 
-@view_defaults(context=models.Baby, request_type=IAPIRequest, renderer='json')
+@view_defaults(context=models.Baby, route_name='api', renderer='json')
 class BabyAPI(object):
 
     def __init__(self, request):
