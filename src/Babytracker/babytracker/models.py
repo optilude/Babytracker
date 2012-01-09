@@ -10,9 +10,9 @@ from sqlalchemy.ext.declarative import declarative_base
 
 from zope.sqlalchemy import ZopeTransactionExtension
 
-from pyramid.security import Allow, DENY_ALL
+from pyramid.security import Everyone, Authenticated, Allow, Deny, DENY_ALL
 
-from babytracker.interfaces import VIEW_PERMISSION, EDIT_PERMISSION
+from babytracker.interfaces import VIEW_PERMISSION, EDIT_PERMISSION, SIGNUP_PERMISSION
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
@@ -48,6 +48,8 @@ class Root(object):
     # Security
 
     __acl__ = [
+            (Deny, Authenticated, SIGNUP_PERMISSION),
+            (Allow, Everyone, (VIEW_PERMISSION, SIGNUP_PERMISSION,)),
             DENY_ALL,
         ]
 

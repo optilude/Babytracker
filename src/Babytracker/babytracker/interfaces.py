@@ -4,6 +4,7 @@ from zope.interface import Interface
 
 VIEW_PERMISSION = 'view'
 EDIT_PERMISSION = 'edit'
+SIGNUP_PERMISSION = 'signup'
 
 # Request markers
 

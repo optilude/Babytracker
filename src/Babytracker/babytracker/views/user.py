@@ -1,18 +1,19 @@
 from pyramid.view import view_config, view_defaults
 
 from babytracker.interfaces import IDesktopRequest
+from babytracker.interfaces import VIEW_PERMISSION
 from babytracker import models
 
 import dateutil.parser
 
 # Until https://github.com/Pylons/pyramid/issues/394 is released
-# @view_defaults(for_=models.Root, request_type=IDesktopRequest)
+@view_defaults(for_=models.User, request_type=IDesktopRequest)
 class UserViews(object):
 
     def __init__(self, request):
         self.request = request
 
-    @view_config(name='', context=models.User, request_type=IDesktopRequest, renderer='../templates/user.pt')
+    @view_config(name='', renderer='../templates/user.pt', permission=VIEW_PERMISSION)
     def index(self):
 
         errors = {}

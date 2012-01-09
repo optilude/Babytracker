@@ -1,26 +1,26 @@
 from pyramid.view import view_config, view_defaults
-from pyramid.security import remember, forget
-from pyramid.httpexceptions import HTTPFound
+from pyramid.security import remember, forget, authenticated_userid
+from pyramid.httpexceptions import HTTPFound, HTTPForbidden
 
 from babytracker.interfaces import IDesktopRequest
+from babytracker.interfaces import SIGNUP_PERMISSION
 from babytracker import models
 
 # Until https://github.com/Pylons/pyramid/issues/394 is released
-# @view_defaults(for_=models.Root, request_type=IDesktopRequest)
+@view_defaults(for_=models.Root, request_type=IDesktopRequest)
 class RootViews(object):
 
     def __init__(self, request):
         self.request = request
 
-    @view_config(name='', context=models.Root, request_type=IDesktopRequest, renderer='babytracker:templates/home.pt')
+    @view_config(name='', renderer='babytracker:templates/home.pt')
     def home(self):
 
         return {
         }
 
-    @view_config(name='signup', context=models.Root, request_type=IDesktopRequest, renderer='babytracker:templates/signup.pt')
+    @view_config(name='signup', renderer='babytracker:templates/signup.pt', permission=SIGNUP_PERMISSION)
     def signup(self):
-
         errors = {}
 
         post = self.request.POST
@@ -65,7 +65,7 @@ class RootViews(object):
             'errors': errors,
         }
 
-    @view_config(name='login', context=models.Root, request_type=IDesktopRequest, renderer='babytracker:templates/login.pt')
+    @view_config(name='login', renderer='babytracker:templates/login.pt', permission=SIGNUP_PERMISSION)
     def login(self):
         errors = {}
 
