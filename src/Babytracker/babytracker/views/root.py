@@ -1,12 +1,11 @@
 from pyramid.view import view_config, view_defaults
-from pyramid.security import remember, forget, authenticated_userid
-from pyramid.httpexceptions import HTTPFound, HTTPForbidden
+from pyramid.security import remember, forget
+from pyramid.httpexceptions import HTTPFound
 
 from babytracker.interfaces import IDesktopRequest
 from babytracker.interfaces import SIGNUP_PERMISSION
 from babytracker import models
 
-# Until https://github.com/Pylons/pyramid/issues/394 is released
 @view_defaults(for_=models.Root, request_type=IDesktopRequest)
 class RootViews(object):
 

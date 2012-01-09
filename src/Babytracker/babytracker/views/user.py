@@ -6,7 +6,6 @@ from babytracker import models
 
 import dateutil.parser
 
-# Until https://github.com/Pylons/pyramid/issues/394 is released
 @view_defaults(for_=models.User, request_type=IDesktopRequest)
 class UserViews(object):
 
