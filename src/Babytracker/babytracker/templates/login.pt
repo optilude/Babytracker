@@ -45,7 +45,7 @@
       </p>
       <p>
         If you do not already have an account you can
-        <a href="/signup">sign up for one</a>.
+        <a href="/@@signup">sign up for one</a>.
       </p>
       <!-- TODO: Password recovery -->
     </div>

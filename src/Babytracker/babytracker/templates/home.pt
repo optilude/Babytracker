@@ -27,8 +27,8 @@
           <img src="/static/babies.jpg" class="thumbnail" />
         </p>
         <p>
-          Please <a href="/signup">sign up</a> if you do not already have
-          an account. Otherwise, <a href="/login">please login in</a>.
+          Please <a href="/@@signup">sign up</a> if you do not already have
+          an account. Otherwise, <a href="/@@login">please login in</a>.
         </p>
       </div>
       <div class="span5">

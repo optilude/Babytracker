@@ -6,7 +6,7 @@ from babytracker.interfaces import IDesktopRequest
 from babytracker.interfaces import SIGNUP_PERMISSION
 from babytracker import models
 
-@view_defaults(for_=models.Root, request_type=IDesktopRequest)
+@view_defaults(context=models.Root, request_type=IDesktopRequest)
 class RootViews(object):
 
     def __init__(self, request):

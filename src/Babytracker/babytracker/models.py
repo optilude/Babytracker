@@ -8,14 +8,17 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 
+from zope.interface import alsoProvides
 from zope.sqlalchemy import ZopeTransactionExtension
 
 from pyramid.security import Everyone, Authenticated, Allow, Deny, DENY_ALL
 
+from babytracker.interfaces import IAPIRequest
 from babytracker.interfaces import VIEW_PERMISSION, EDIT_PERMISSION, SIGNUP_PERMISSION
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
+
 
 class Root(object):
     """Root factory
@@ -36,7 +39,9 @@ class Root(object):
     __parent__ = None
 
     def __getitem__(self, name):
-        if '@' not in name:
+        if name == u'api':
+            return APIRoot(self)
+        elif '@' not in name or name.startswith('@'): # view or not an email address
             raise KeyError(name)
 
         session = DBSession()
@@ -53,6 +58,28 @@ class Root(object):
             DENY_ALL,
         ]
 
+class APIRoot(object):
+    """Root factory for the /api namespace
+    """
+
+    def __init__(self, request):
+        self.request = request
+    
+    __name__ = u'api'
+
+    def __getitem__(self, name):
+        import pdb; pdb.set_trace( )
+        if '@' not in name or name.startswith('@'): # view or not an email address
+            raise KeyError(name)
+
+        session = DBSession()
+        try:
+            user = session.query(User).filter_by(email=name).one()
+            user.__parent__ = self
+            return user
+        except NoResultFound:
+            raise KeyError(name)
+
 class User(Base):
     __tablename__ = 'users'
 
@@ -60,6 +87,8 @@ class User(Base):
     email = Column(String, unique=True)
     name = Column(String)
     password = Column(String)
+
+    _parent = None # transient
 
     def __init__(self, email, name, password):
         self.email = email
@@ -101,7 +130,13 @@ class User(Base):
 
     @property
     def __parent__(self):
-        return Root()
+        if self._parent is None:
+            self._parent = Root()
+        return self._parent
+    @__parent__.setter
+    def __parent__(self, value):
+        self._parent = value
+
 
     def __getitem__(self, name):
         for baby in self.babies:

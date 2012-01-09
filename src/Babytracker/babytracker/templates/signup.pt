@@ -15,7 +15,7 @@
   <div class="row" metal:fill-slot="body">
     <div class="span10">
 
-      <form method="post" action="/signup">
+      <form method="post" action="/@@signup">
         <fieldset>
           <div tal:attributes="class errors.get('email', None) is None and 'clearfix' or 'clearfix error'">
             <label for="email">Email address</label>

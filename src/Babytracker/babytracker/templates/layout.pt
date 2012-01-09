@@ -33,7 +33,7 @@
           <ul class="nav">
             <li class="${request.path == '/' and 'active' or None}"><a href="/">Home</a></li>
             <li class="${request.path == '/signup' and 'active' or None}" tal:condition="not:authenticated_userid">
-              <a href="/signup">Sign up</a>
+              <a href="/@@signup">Sign up</a>
             </li>
           </ul>
           <div class="pull-right" tal:condition="authenticated_userid">
@@ -42,7 +42,7 @@
                 <a href="/${authenticated_userid}/">${authenticated_userid}</a>
               </li>
               <li>
-                <a href="/logout">Log out</a>
+                <a href="/@@logout">Log out</a>
               </li>
             </ul>
           </div>

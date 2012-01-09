@@ -15,3 +15,7 @@ class IMobileRequest(Interface):
 class IDesktopRequest(Interface):
     """A request form a desktop browser
     """
+
+class IAPIRequest(Interface):
+    """A request to the REST API
+    """

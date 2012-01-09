@@ -6,7 +6,7 @@ from babytracker import models
 
 import dateutil.parser
 
-@view_defaults(for_=models.User, request_type=IDesktopRequest)
+@view_defaults(context=models.User, request_type=IDesktopRequest)
 class UserViews(object):
 
     def __init__(self, request):
