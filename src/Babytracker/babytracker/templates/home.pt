@@ -24,7 +24,7 @@
           nappies.
         </p>
         <p class="image-box">
-          <img src="/static/babies.jpg" class="thumbnail" />
+          <img src="${request.static_url('babytracker:static/images/babies.jpg')}" class="thumbnail" />
         </p>
         <p>
           Please <a href="/@@signup">sign up</a> if you do not already have
@@ -63,7 +63,7 @@
           along the top to record entries and analyst past behaviour.
         </p>
         <p class="image-box">
-          <img src="/static/sleep.jpg" class="thumbnail" />
+          <img src="${request.static_url('babytracker:static/images/sleep.jpg')}" class="thumbnail" />
         </p>
       </div>
     </tal:block>

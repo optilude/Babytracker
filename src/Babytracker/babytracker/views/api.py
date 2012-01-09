@@ -22,10 +22,7 @@ class RootAPI(object):
         }
         """
 
-        return {
-            'login_url': '',
-            'logout_url': '',
-        }
+        return {}
     
     @view_config(name='login', request_method='POST', permission=SIGNUP_PERMISSION)
     def login(self):
@@ -66,8 +63,6 @@ class RootAPI(object):
         """Log out as the current user
 
         POST /api/logout
-        {
-        }
 
         200 -> {
             'url' : '/' // URL to home
@@ -233,28 +228,421 @@ class BabyAPI(object):
         """
 
         return {}
+    
+    @view_config(name='', request_method='DELETE', permission=EDIT_PERMISSION)
+    def delete(self):
+        """Delete the baby
 
-    # @view_config(name='', request_method='POST', permission=EDIT_PERMISSION)
-    # def create(self):
-    #     """Create a new entry
+        DELETE /api/users/test@example.org/jill
 
-    #     POST /api/users/test@example.org/jill
-    #     {
-            
-    #     }
+        200 -> {
+        }
 
-    #     200 -> {
-    #         'url'   : '/api/users/test@example.org/jill/1' // Entry URL
-            
-    #     }
+        403 -> {
+            'error_detail': {
+                'message': 'Not authorised to delete this baby'
+            }
+        }
+        """
 
-    #     403 -> {
-    #         'error_detail': {
-    #             'message': ''
-    #         }
-    #     }
-    #     """
+        return {}
 
-    #     return {}
+    @view_config(name='', request_method='POST', permission=EDIT_PERMISSION)
+    def create(self):
+        """Create a new entry
 
-# TODO: Entry API
+        POST /api/users/test@example.org/jill
+        {
+            'entry_type': 'sleep',          // Or 'breast_feed', 'bottle_feed', 'mixed_feed', 'sleep', 'nappy_change'
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'left_duration': 10,            // For 'breast_feed' or 'mixed_feed'
+            'right_duration': 0,            // For 'breast_feed' or 'mixed_feed'
+            'amount': 100,                  // For 'bottle_feed'
+            'topup': 120,                   // For 'mixed_feed'
+            'duration': 30,                 // For 'sleep', in minutes
+            'contents': 'wet',              // For 'dirty' or 'none', for 'nappy_change'
+        }
+
+        200 -> {
+            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+
+            'entry_type': 'sleep',          // Or 'breast_feed', 'bottle_feed', 'mixed_feed', 'sleep', 'nappy_change'
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'left_duration': 10,            // For 'breast_feed' or 'mixed_feed'
+            'right_duration': 0,            // For 'breast_feed' or 'mixed_feed'
+            'amount': 100,                  // For 'bottle_feed'
+            'topup': 120,                   // For 'mixed_feed'
+            'duration': 30,                 // For 'sleep', in minutes
+            'contents': 'wet',              // For 'dirty' or 'none', for 'nappy_change'
+        }
+
+        403 -> {
+            'error_detail': {
+                'message': 'Not authorised to create entry for this baby'
+            }
+        }
+        """
+
+        return {}
+
+@view_defaults(context=models.Entry, route_name='api', renderer='json')
+class EntryAPI(object):
+
+    @view_config(name='', request_method='DELETE', permission=EDIT_PERMISSION)
+    def delete(self):
+        """Delete the entry
+
+        DELETE /api/users/test@example.org/jill
+
+        200 -> {
+        }
+
+        403 -> {
+            'error_detail': {
+                'message': 'Not authorised to delete this entry'
+            }
+        }
+        """
+
+        return {}
+
+
+@view_defaults(context=models.BreastFeed, route_name='api', renderer='json')
+class BreastFeedAPI(object):
+
+    def __init__(self, request):
+        self.request = request
+
+    @view_config(name='', request_method='GET', permission=VIEW_PERMISSION)
+    def index(self):
+        """Details about the entry
+
+        GET /api/users/test@example.org/jill/1
+
+        200 -> {
+            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+
+            'entry_type': 'breast_feed',
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'left_duration': 10,
+            'right_duration': 0,
+        }
+
+        403 -> {
+            'error_detail': {
+                'message': 'Not authorised to view details about this entry'
+            }
+        }
+        """
+
+        return {}
+
+    @view_config(name='', request_method='PUT', permission=EDIT_PERMISSION)
+    def edit(self):
+        """Update the baby
+
+        PUT /api/users/test@example.org/jill/1
+        {
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'left_duration': 10,
+            'right_duration': 0,
+        }
+
+        200 -> {
+            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+
+            'entry_type': 'breast_feed',
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'left_duration': 10,
+            'right_duration': 0,
+        }
+
+        403 -> {
+            'error_detail': {
+                'message': 'Not authorised to edit this entry'
+            }
+        }
+        """
+
+        return {}
+
+@view_defaults(context=models.BottleFeed, route_name='api', renderer='json')
+class BottleFeedAPI(object):
+
+    def __init__(self, request):
+        self.request = request
+
+    @view_config(name='', request_method='GET', permission=VIEW_PERMISSION)
+    def index(self):
+        """Details about the entry
+
+        GET /api/users/test@example.org/jill/1
+
+        200 -> {
+            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+
+            'entry_type': 'bottle_feed',
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'amount': 100,
+        }
+
+        403 -> {
+            'error_detail': {
+                'message': 'Not authorised to view details about this entry'
+            }
+        }
+        """
+
+        return {}
+
+    @view_config(name='', request_method='PUT', permission=EDIT_PERMISSION)
+    def edit(self):
+        """Update the baby
+
+        PUT /api/users/test@example.org/jill/1
+        {
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'amount': 100,
+        }
+
+        200 -> {
+            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+
+            'entry_type': 'bottle_feed',
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'amount': 100,
+        }
+
+        403 -> {
+            'error_detail': {
+                'message': 'Not authorised to edit this entry'
+            }
+        }
+        """
+
+        return {}
+
+@view_defaults(context=models.MixedFeed, route_name='api', renderer='json')
+class MixedFeedAPI(object):
+
+    def __init__(self, request):
+        self.request = request
+
+    @view_config(name='', request_method='GET', permission=VIEW_PERMISSION)
+    def index(self):
+        """Details about the entry
+
+        GET /api/users/test@example.org/jill/1
+
+        200 -> {
+            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+
+            'entry_type': 'breast_feed',
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'left_duration': 10,
+            'right_duration': 0,
+            'topup': 120,
+        }
+
+        403 -> {
+            'error_detail': {
+                'message': 'Not authorised to view details about this entry'
+            }
+        }
+        """
+
+        return {}
+
+    @view_config(name='', request_method='PUT', permission=EDIT_PERMISSION)
+    def edit(self):
+        """Update the baby
+
+        PUT /api/users/test@example.org/jill/1
+        {
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'left_duration': 10,
+            'right_duration': 0,
+            'topup': 120,
+        }
+
+        200 -> {
+            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+
+            'entry_type': 'breast_feed',
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'left_duration': 10,
+            'right_duration': 0,
+            'topup': 120,
+        }
+
+        403 -> {
+            'error_detail': {
+                'message': 'Not authorised to edit this entry'
+            }
+        }
+        """
+
+        return {}
+
+@view_defaults(context=models.Sleep, route_name='api', renderer='json')
+class SleepAPI(object):
+
+    def __init__(self, request):
+        self.request = request
+
+    @view_config(name='', request_method='GET', permission=VIEW_PERMISSION)
+    def index(self):
+        """Details about the entry
+
+        GET /api/users/test@example.org/jill/1
+
+        200 -> {
+            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+
+            'entry_type': 'breast_feed',
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'duration': 100,
+        }
+
+        403 -> {
+            'error_detail': {
+                'message': 'Not authorised to view details about this entry'
+            }
+        }
+        """
+
+        return {}
+
+    @view_config(name='', request_method='PUT', permission=EDIT_PERMISSION)
+    def edit(self):
+        """Update the baby
+
+        PUT /api/users/test@example.org/jill/1
+        {
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'duration': 100,
+        }
+
+        200 -> {
+            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+
+            'entry_type': 'breast_feed',
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'duration': 100,
+        }
+
+        403 -> {
+            'error_detail': {
+                'message': 'Not authorised to edit this entry'
+            }
+        }
+        """
+
+        return {}
+
+@view_defaults(context=models.NappyChange, route_name='api', renderer='json')
+class NappyChangeAPI(object):
+
+    def __init__(self, request):
+        self.request = request
+
+    @view_config(name='', request_method='GET', permission=VIEW_PERMISSION)
+    def index(self):
+        """Details about the entry
+
+        GET /api/users/test@example.org/jill/1
+
+        200 -> {
+            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+
+            'entry_type': 'breast_feed',
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'contents': 'wet',
+        }
+
+        403 -> {
+            'error_detail': {
+                'message': 'Not authorised to view details about this entry'
+            }
+        }
+        """
+
+        return {}
+
+    @view_config(name='', request_method='PUT', permission=EDIT_PERMISSION)
+    def edit(self):
+        """Update the baby
+
+        PUT /api/users/test@example.org/jill/1
+        {
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'contents': 'wet',
+        }
+
+        200 -> {
+            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+
+            'entry_type': 'breast_feed',
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'contents': 'wet',
+        }
+
+        403 -> {
+            'error_detail': {
+                'message': 'Not authorised to edit this entry'
+            }
+        }
+        """
+
+        return {}
