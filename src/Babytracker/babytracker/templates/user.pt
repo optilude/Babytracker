@@ -68,6 +68,9 @@ jQuery(function($) {
     </div>
     <div class="span8">
       <h2>Your babies</h2>
+      <p tal:condition="len(context.babies) > 0">
+        The following babies have been registered:
+      </p>
       <p tal:condition="len(context.babies) == 0">
         You have not registered any babies yet. Click
         <strong>Add baby</strong> to do so.

@@ -61,7 +61,9 @@ class UserViews(object):
             if errors:
                 self.request.session.flash(u"Unable to add baby. Please try again.", queue='error')
             else:
-                user.babies.append(models.Baby(user, baby_dob, baby_name, baby_gender))
+                baby = models.Baby(user, baby_dob, baby_name, baby_gender)
+                session = models.DBSession()
+                session.add(baby)
                 self.request.session.flash(u"Baby added", queue="success")
 
         return {

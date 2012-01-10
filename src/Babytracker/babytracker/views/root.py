@@ -13,9 +13,7 @@ class RootViews(object):
 
     @view_config(name='', renderer='babytracker:templates/home.pt')
     def home(self):
-
-        return {
-        }
+        return {}
 
     @view_config(name='signup', renderer='babytracker:templates/signup.pt', permission=SIGNUP_PERMISSION)
     def signup(self):

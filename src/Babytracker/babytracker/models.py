@@ -8,10 +8,12 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 
+from zope.interface import implements
 from zope.sqlalchemy import ZopeTransactionExtension
 
 from pyramid.security import Everyone, Authenticated, Allow, Deny, DENY_ALL
 
+from babytracker.interfaces import IJSONCapable
 from babytracker.interfaces import VIEW_PERMISSION, EDIT_PERMISSION, SIGNUP_PERMISSION
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
@@ -55,6 +57,7 @@ class Root(object):
         ]
 
 class User(Base):
+    implements(IJSONCapable)
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
@@ -121,7 +124,16 @@ class User(Base):
             DENY_ALL,
         ]
 
+    # JSON representation
+
+    def to_json_dict(self):
+        return {
+            'email': self.email,
+            'name': self.name,
+        }
+
 class Baby(Base):
+    implements(IJSONCapable)
     __tablename__ = 'babies'
 
     id = Column(Integer, primary_key=True)
@@ -160,11 +172,15 @@ class Baby(Base):
 
         return query.order_by(desc(cls.start))
 
+    @staticmethod
+    def normalize_name(name):
+        return name.strip().lower().replace(' ', '-')
+
     # Traversal
 
     @property
     def __name__(self):
-        return self.name.strip().lower().replace(' ', '-')
+        return self.normalize_name(self.name)
 
     @property
     def __parent__(self):
@@ -183,7 +199,17 @@ class Baby(Base):
         except NoResultFound:
             raise KeyError(name)
 
+    # JSON representation
+
+    def to_json_dict(self):
+        return {
+            'dob': self.dob.isoformat(),
+            'name': self.name,
+            'gender': self.gender,
+        }
+
 class Entry(Base):
+    implements(IJSONCapable)
     __tablename__ = 'entries'
 
     id = Column(Integer, primary_key=True)
@@ -217,6 +243,16 @@ class Entry(Base):
     def __getitem__(self, name):
         raise KeyError(name)
 
+    # JSON representation
+
+    def to_json_dict(self):
+        return {
+            'entry_type': self.type,
+            'start': self.start.isoformat(),
+            'end': self.end.isoformat(),
+            'note': self.note,
+        }
+
 class BreastFeed(Entry):
     __mapper_args__ = {'polymorphic_identity': 'breast_feed'}
 
@@ -228,6 +264,16 @@ class BreastFeed(Entry):
         self.left_duration = left_duration
         self.right_duration = right_duration
 
+    # JSON representation
+
+    def to_json_dict(self):
+        entry = super(BreastFeed, self).to_json_dict()
+        entry.update({
+            'left_duration': self.left_duration,
+            'right_duration': self.right_duration,
+        })
+        return entry
+
 class BottleFeed(Entry):
     __mapper_args__ = {'polymorphic_identity': 'bottle_feed'}
 
@@ -236,6 +282,15 @@ class BottleFeed(Entry):
     def __init__(self, baby, start, amount, end=None, note=None):
         super(BottleFeed, self).__init__(baby, start, end, note)
         self.amount = amount
+
+    # JSON representation
+
+    def to_json_dict(self):
+        entry = super(BreastFeed, self).to_json_dict()
+        entry.update({
+            'amount': self.amount,
+        })
+        return entry
 
 class MixedFeed(BreastFeed):
     __mapper_args__ = {'polymorphic_identity': 'mixed_feed'}
@@ -251,6 +306,15 @@ class MixedFeed(BreastFeed):
         self.end = end
         self.note = note
 
+    # JSON representation
+
+    def to_json_dict(self):
+        entry = super(BreastFeed, self).to_json_dict()
+        entry.update({
+            'topup': self.topup,
+        })
+        return entry
+
 class Sleep(Entry):
     __mapper_args__ = {'polymorphic_identity': 'sleep'}
 
@@ -260,6 +324,15 @@ class Sleep(Entry):
         super(Sleep, self).__init__(baby, start, end, note)
         self.duration = duration
 
+    # JSON representation
+
+    def to_json_dict(self):
+        entry = super(BreastFeed, self).to_json_dict()
+        entry.update({
+            'duration': self.duration,
+        })
+        return entry
+
 class NappyChange(Entry):
     __mapper_args__ = {'polymorphic_identity': 'nappy_change'}
 
@@ -268,6 +341,15 @@ class NappyChange(Entry):
     def __init__(self, baby, start, contents, end=None, note=None):
         super(NappyChange, self).__init__(baby, start, end, note)
         self.contents = contents
+
+    # JSON representation
+
+    def to_json_dict(self):
+        entry = super(BreastFeed, self).to_json_dict()
+        entry.update({
+            'contents': self.contents,
+        })
+        return entry
 
 # TODO: Other types of entries:
 # - solid foods

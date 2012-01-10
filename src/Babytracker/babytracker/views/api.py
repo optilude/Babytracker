@@ -1,8 +1,33 @@
+import urllib
+import datetime
+import dateutil.parser
+
 from pyramid.view import view_config, view_defaults
+from pyramid.traversal import resource_path
+from pyramid.httpexceptions import HTTPBadRequest, HTTPUnauthorized, HTTPConflict
 from pyramid.security import remember, forget
 
 from babytracker.interfaces import VIEW_PERMISSION, EDIT_PERMISSION, SIGNUP_PERMISSION
 from babytracker import models
+
+def api_resource_path(context, request):
+    return request.current_route_path(traverse=urllib.unquote(resource_path(context)[1:]))
+
+def user_json(user, request):
+    data = user.to_json_dict()
+    data['url'] = api_resource_path(user, request)
+    data['babies'] = [baby_json(baby, request) for baby in user.babies]
+    return data
+
+def baby_json(baby, request):
+    data = baby.to_json_dict()
+    data['url'] = api_resource_path(baby, request)
+    return data
+
+def entry_json(entry, request):
+    data = entry.to_json_dict()
+    data['url'] = api_resource_path(entry, request)
+    return data
 
 @view_defaults(context=models.Root, route_name='api', renderer='json')
 class RootAPI(object):
@@ -17,13 +42,18 @@ class RootAPI(object):
         GET /
 
         200 -> {
-            'login_url' : '/api/login', // API URL for logging in
-            'logout_url': /api/logout'  // API URL for logging out
+            'login_url' : '/api/@@login', // API URL for logging in
+            'logout_url': /api/@@logout'  // API URL for logging out
         }
         """
 
-        return {}
-    
+        prefix = api_resource_path(self.request.context, self.request)
+
+        return {
+            'login_url': prefix + '@@login',
+            'logout_url': prefix + '@@logout',
+        }
+
     @view_config(name='login', request_method='POST', permission=SIGNUP_PERMISSION)
     def login(self):
         """Log in and retreive basic information about the user
@@ -35,29 +65,48 @@ class RootAPI(object):
         }
 
         200 -> {
-            'url' : '/api/users/test@example.org', // API root for user
-            'email': 'test@example.org',           // User's email address
-            'name' : 'John Smith',                 // User's full name
+            'url' : '/api/test@example.org', // API root for user
+            'email': 'test@example.org',     // User's email address
+            'name' : 'John Smith',           // User's full name
             'babies': [
                 {
-                    'url'   : '/api/users/test@example.org/jill' // Baby URL
-                    'name'  : 'Jill',                            // Baby name
-                    'dob'   : '2011-01-01',                      // Baby date of birth
-                    'gender': 'f'                                // Baby gender
+                    'url'   : '/api/test@example.org/jill' // Baby URL
+                    'name'  : 'Jill',                      // Baby name
+                    'dob'   : '2011-01-01',                // Baby date of birth
+                    'gender': 'f'                          // Baby gender
                 },
                 ...
             ]
         }
 
-        401 -> {
-            'error_detail': {
-                'message': 'Invalid credentials'
-            }
-        }
+        400 -> No username and/or no password
+        401 -> Invalid credentials
+        403 -> Already logged in
         """
 
-        return {}
-    
+        try:
+            body = self.request.json_body
+        except ValueError, e:
+            raise HTTPBadRequest(str(e))
+
+        if not isinstance(body, dict):
+            raise HTTPBadRequest("JSON object with 'username' and 'password' expected")
+
+        username = body.get('username')
+        password = body.get('password')
+
+        if not password or not username:
+            raise HTTPBadRequest("JSON object with 'username' and 'password' expected")
+
+        user = models.User.authenticate(username, password)
+        if user is None:
+            raise HTTPUnauthorized("Invalid credentials")
+
+        headers = remember(self.request, user.__name__)
+        self.request.response.headers.update(headers)
+
+        return user_json(user, self.request)
+
     @view_config(name='logout', request_method='POST')
     def logout(self):
         """Log out as the current user
@@ -65,17 +114,16 @@ class RootAPI(object):
         POST /api/logout
 
         200 -> {
-            'url' : '/' // URL to home
-        }
-
-        403 -> {
-            'error_detail': {
-                'message': 'User not logged in'
-            }
+            'url' : '/api' // URL to home
         }
         """
 
-        return {}
+        headers = forget(self.request.context)
+        self.request.response.headers.update(headers)
+
+        return {
+            'url': api_resource_path(self.request.context, self.request)
+        }
 
 @view_defaults(context=models.User, route_name='api', renderer='json')
 class UserAPI(object):
@@ -87,15 +135,15 @@ class UserAPI(object):
     def index(self):
         """Details about the user
 
-        GET /api/users/test@example.org
+        GET /api/test@example.org
 
         200 -> {
-            'url' : '/api/users/test@example.org', // API root for user
+            'url' : '/api/test@example.org', // API root for user
             'email': 'test@example.org',           // User's email address
             'name' : 'John Smith',                 // User's full name
             'babies': [
                 {
-                    'url'   : '/api/users/test@example.org/jill' // Baby URL
+                    'url'   : '/api/test@example.org/jill' // Baby URL
                     'name'  : 'Jill',                            // Baby name
                     'dob'   : '2011-01-01',                      // Baby date of birth
                     'gender': 'f'                                // Baby gender
@@ -104,32 +152,29 @@ class UserAPI(object):
             ]
         }
 
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to view details about this user'
-            }
-        }
+        400 -> Neither name, nor password supplied
+        403 -> Not logged in or attempting to access another user's details
         """
 
-        return {}
+        return user_json(self.request.context, self.request)
 
     @view_config(name='', request_method='PUT', permission=EDIT_PERMISSION)
     def edit(self):
         """Update the user
 
-        PUT /api/users/test@example.org
+        PUT /api/test@example.org
         {
             'name': 'Jack Smith', // optional
             'password': 'sikrit', // optional
         }
 
         200 -> {
-            'url' : '/api/users/test@example.org', // API root for user
+            'url' : '/api/test@example.org', // API root for user
             'email': 'test@example.org',           // User's email address
             'name' : 'Jack Smith',                 // User's full name
             'babies': [
                 {
-                    'url'   : '/api/users/test@example.org/jill' // Baby URL
+                    'url'   : '/api/test@example.org/jill' // Baby URL
                     'name'  : 'Jill',                            // Baby name
                     'dob'   : '2011-01-01',                      // Baby date of birth
                     'gender': 'f'                                // Baby gender
@@ -138,41 +183,90 @@ class UserAPI(object):
             ]
         }
 
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to edit this user'
-            }
-        }
+        403 -> Not logged in or attempting to edit another user's details
         """
 
-        return {}
+        try:
+            body = self.request.json_body
+        except ValueError, e:
+            raise HTTPBadRequest(str(e))
+
+        if not isinstance(body, dict):
+            raise HTTPBadRequest("JSON object with 'name' and/or 'password' expected")
+
+        name = body.get('name')
+        password = body.get('password')
+
+        if not password and not name:
+            raise HTTPBadRequest("JSON object with 'name' and/or 'password' expected")
+
+        if name:
+            self.request.context.name = name
+        if password:
+            self.request.context.change_password(password)
+
+        return user_json(self.request.context, self.request)
 
     @view_config(name='', request_method='POST', permission=EDIT_PERMISSION)
     def create(self):
         """Create a new baby
 
-        POST /api/users/test@example.org
+        POST /api/test@example.org
         {
             'name': 'James',
             'dob': '2012-01-01',
             'gender': 'm'
         }
 
-        200 -> {
-            'url'   : '/api/users/test@example.org/james' // Baby URL
-            'name'  : 'James',                            // Baby name
-            'dob'   : '2012-01-01',                       // Baby date of birth
-            'gender': 'm'                                 // Baby gender
+        201 -> {
+            'url'   : '/api/test@example.org/james' // Baby URL
+            'name'  : 'James',                      // Baby name
+            'dob'   : '2012-01-01',                 // Baby date of birth
+            'gender': 'm'                           // Baby gender
         }
 
-        403 -> {
-            'error_detail': {
-                'message': 'Conception Denied'
-            }
-        }
+        400 -> name, dob or gender missing, or gender not 'm' or 'f'
+        409 -> name already exists
         """
 
-        return {}
+        try:
+            body = self.request.json_body
+        except ValueError, e:
+            raise HTTPBadRequest(str(e))
+
+        if not isinstance(body, dict):
+            raise HTTPBadRequest("JSON object with 'name', 'dob' and 'gender' expected")
+
+        name = body.get('name')
+        dob = body.get('dob')
+        gender = body.get('gender')
+
+        if not name or not dob or not gender:
+            raise HTTPBadRequest("JSON object with 'name', 'dob' and 'gender' expected")
+
+        if gender not in ('m', 'f'):
+            raise HTTPBadRequest("gender must be 'm' or 'f'")
+
+        try:
+            dob_date = dateutil.parser.parse(dob)
+        except ValueError:
+            raise HTTPBadRequest("Invalid dob date")
+
+        if not isinstance(dob_date, datetime.date):
+            raise HTTPBadRequest("Invalid dob date")
+
+        normalized_name = models.Baby.normalize_name(name)
+        for baby in self.request.context.babies:
+            if baby.__name__ == normalized_name:
+                raise HTTPConflict(u"Baby with name %s already exists" % name)
+
+        session = models.DBSession()
+        baby = models.Baby(self.request.context, dob_date, name, gender)
+        session.add(baby)
+
+        self.request.response.status_int = 201
+
+        return baby_json(baby, self.request)
 
 @view_defaults(context=models.Baby, route_name='api', renderer='json')
 class BabyAPI(object):
@@ -184,10 +278,10 @@ class BabyAPI(object):
     def index(self):
         """Details about the baby
 
-        GET /api/users/test@example.org/jill
+        GET /api/test@example.org/jill
 
         200 -> {
-            'url'   : '/api/users/test@example.org/jill' // Baby URL
+            'url'   : '/api/test@example.org/jill' // Baby URL
             'name'  : 'Jill',                            // Baby name
             'dob'   : '2011-01-01',                      // Baby date of birth
             'gender': 'f'                                // Baby gender
@@ -202,11 +296,46 @@ class BabyAPI(object):
 
         return {}
 
+    @view_config(name='entries', request_method='GET', permission=VIEW_PERMISSION)
+    def entries(self):
+        """Entries recorded for the baby
+
+        GET /api/test@example.org/jill/entries?start=2011-01-01T12:00:00&end=2011-01-01T12:00:00
+
+        start and end contain ISO formatted dates or date-times to bound the
+        returned list. Both are optional.
+
+        200 -> [
+            {
+                'entry_type': 'sleep',          // Or 'breast_feed', 'bottle_feed', 'mixed_feed', 'sleep', 'nappy_change'
+                'start': '2012-01-01 12:21:00',
+                'end': '2012-01-01 12:30:00',   // Optional
+                'note': 'Note text',            // Optional
+
+                'left_duration': 10,            // For 'breast_feed' or 'mixed_feed'
+                'right_duration': 0,            // For 'breast_feed' or 'mixed_feed'
+                'amount': 100,                  // For 'bottle_feed'
+                'topup': 120,                   // For 'mixed_feed'
+                'duration': 30,                 // For 'sleep', in minutes
+                'contents': 'wet',              // For 'dirty' or 'none', for 'nappy_change'
+            },
+            ...
+        ]
+
+        403 -> {
+            'error_detail': {
+                'message': 'Not authorised to view details about this baby'
+            }
+        }
+        """
+
+        return {}
+
     @view_config(name='', request_method='PUT', permission=EDIT_PERMISSION)
     def edit(self):
         """Update the baby
 
-        PUT /api/users/test@example.org/jill
+        PUT /api/test@example.org/jill
         {
             'name'  : 'Jillie',       // Optional
             'dob'   : '2011-01-01',   // Optional
@@ -214,7 +343,7 @@ class BabyAPI(object):
         }
 
         200 -> {
-            'url'   : '/api/users/test@example.org/jillie' // Baby URL - may change!
+            'url'   : '/api/test@example.org/jillie' // Baby URL - may change!
             'name'  : 'Jillie',                            // Baby name
             'dob'   : '2011-01-01',                        // Baby date of birth
             'gender': 'f'                                  // Baby gender
@@ -228,12 +357,12 @@ class BabyAPI(object):
         """
 
         return {}
-    
+
     @view_config(name='', request_method='DELETE', permission=EDIT_PERMISSION)
     def delete(self):
         """Delete the baby
 
-        DELETE /api/users/test@example.org/jill
+        DELETE /api/test@example.org/jill
 
         200 -> {
         }
@@ -251,7 +380,7 @@ class BabyAPI(object):
     def create(self):
         """Create a new entry
 
-        POST /api/users/test@example.org/jill
+        POST /api/test@example.org/jill
         {
             'entry_type': 'sleep',          // Or 'breast_feed', 'bottle_feed', 'mixed_feed', 'sleep', 'nappy_change'
             'start': '2012-01-01 12:21:00',
@@ -267,7 +396,7 @@ class BabyAPI(object):
         }
 
         200 -> {
-            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+            'url'   : '/api/test@example.org/jill/1' // Entry URL
 
             'entry_type': 'sleep',          // Or 'breast_feed', 'bottle_feed', 'mixed_feed', 'sleep', 'nappy_change'
             'start': '2012-01-01 12:21:00',
@@ -298,7 +427,7 @@ class EntryAPI(object):
     def delete(self):
         """Delete the entry
 
-        DELETE /api/users/test@example.org/jill
+        DELETE /api/test@example.org/jill
 
         200 -> {
         }
@@ -323,10 +452,10 @@ class BreastFeedAPI(object):
     def index(self):
         """Details about the entry
 
-        GET /api/users/test@example.org/jill/1
+        GET /api/test@example.org/jill/1
 
         200 -> {
-            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+            'url'   : '/api/test@example.org/jill/1' // Entry URL
 
             'entry_type': 'breast_feed',
             'start': '2012-01-01 12:21:00',
@@ -350,7 +479,7 @@ class BreastFeedAPI(object):
     def edit(self):
         """Update the baby
 
-        PUT /api/users/test@example.org/jill/1
+        PUT /api/test@example.org/jill/1
         {
             'start': '2012-01-01 12:21:00',
             'end': '2012-01-01 12:30:00',   // Optional
@@ -361,7 +490,7 @@ class BreastFeedAPI(object):
         }
 
         200 -> {
-            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+            'url'   : '/api/test@example.org/jill/1' // Entry URL
 
             'entry_type': 'breast_feed',
             'start': '2012-01-01 12:21:00',
@@ -391,10 +520,10 @@ class BottleFeedAPI(object):
     def index(self):
         """Details about the entry
 
-        GET /api/users/test@example.org/jill/1
+        GET /api/test@example.org/jill/1
 
         200 -> {
-            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+            'url'   : '/api/test@example.org/jill/1' // Entry URL
 
             'entry_type': 'bottle_feed',
             'start': '2012-01-01 12:21:00',
@@ -417,7 +546,7 @@ class BottleFeedAPI(object):
     def edit(self):
         """Update the baby
 
-        PUT /api/users/test@example.org/jill/1
+        PUT /api/test@example.org/jill/1
         {
             'start': '2012-01-01 12:21:00',
             'end': '2012-01-01 12:30:00',   // Optional
@@ -427,7 +556,7 @@ class BottleFeedAPI(object):
         }
 
         200 -> {
-            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+            'url'   : '/api/test@example.org/jill/1' // Entry URL
 
             'entry_type': 'bottle_feed',
             'start': '2012-01-01 12:21:00',
@@ -456,10 +585,10 @@ class MixedFeedAPI(object):
     def index(self):
         """Details about the entry
 
-        GET /api/users/test@example.org/jill/1
+        GET /api/test@example.org/jill/1
 
         200 -> {
-            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+            'url'   : '/api/test@example.org/jill/1' // Entry URL
 
             'entry_type': 'breast_feed',
             'start': '2012-01-01 12:21:00',
@@ -484,7 +613,7 @@ class MixedFeedAPI(object):
     def edit(self):
         """Update the baby
 
-        PUT /api/users/test@example.org/jill/1
+        PUT /api/test@example.org/jill/1
         {
             'start': '2012-01-01 12:21:00',
             'end': '2012-01-01 12:30:00',   // Optional
@@ -496,7 +625,7 @@ class MixedFeedAPI(object):
         }
 
         200 -> {
-            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+            'url'   : '/api/test@example.org/jill/1' // Entry URL
 
             'entry_type': 'breast_feed',
             'start': '2012-01-01 12:21:00',
@@ -527,10 +656,10 @@ class SleepAPI(object):
     def index(self):
         """Details about the entry
 
-        GET /api/users/test@example.org/jill/1
+        GET /api/test@example.org/jill/1
 
         200 -> {
-            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+            'url'   : '/api/test@example.org/jill/1' // Entry URL
 
             'entry_type': 'breast_feed',
             'start': '2012-01-01 12:21:00',
@@ -553,7 +682,7 @@ class SleepAPI(object):
     def edit(self):
         """Update the baby
 
-        PUT /api/users/test@example.org/jill/1
+        PUT /api/test@example.org/jill/1
         {
             'start': '2012-01-01 12:21:00',
             'end': '2012-01-01 12:30:00',   // Optional
@@ -563,7 +692,7 @@ class SleepAPI(object):
         }
 
         200 -> {
-            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+            'url'   : '/api/test@example.org/jill/1' // Entry URL
 
             'entry_type': 'breast_feed',
             'start': '2012-01-01 12:21:00',
@@ -592,10 +721,10 @@ class NappyChangeAPI(object):
     def index(self):
         """Details about the entry
 
-        GET /api/users/test@example.org/jill/1
+        GET /api/test@example.org/jill/1
 
         200 -> {
-            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+            'url'   : '/api/test@example.org/jill/1' // Entry URL
 
             'entry_type': 'breast_feed',
             'start': '2012-01-01 12:21:00',
@@ -618,7 +747,7 @@ class NappyChangeAPI(object):
     def edit(self):
         """Update the baby
 
-        PUT /api/users/test@example.org/jill/1
+        PUT /api/test@example.org/jill/1
         {
             'start': '2012-01-01 12:21:00',
             'end': '2012-01-01 12:30:00',   // Optional
@@ -628,7 +757,7 @@ class NappyChangeAPI(object):
         }
 
         200 -> {
-            'url'   : '/api/users/test@example.org/jill/1' // Entry URL
+            'url'   : '/api/test@example.org/jill/1' // Entry URL
 
             'entry_type': 'breast_feed',
             'start': '2012-01-01 12:21:00',
