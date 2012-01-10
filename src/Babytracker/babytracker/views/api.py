@@ -335,13 +335,13 @@ class BabyAPI(object):
                 start_date = dateutil.parser.parse(start)
             except ValueError:
                 raise HTTPBadRequest("Invalid start date")
-        
+
         if end is not None:
             try:
                 end_date = dateutil.parser.parse(end)
             except ValueError:
                 raise HTTPBadRequest("Invalid end date")
-        
+
         return [
             entry_json(entry, self.request)
             for entry in self.request.context.get_entries_between(
@@ -415,9 +415,9 @@ class BabyAPI(object):
             baby.name = name
         if gender:
             baby.gender = gender
-        
+
         return baby_json(baby, self.request)
-    
+
     @view_config(name='', request_method='DELETE', permission=EDIT_PERMISSION)
     def delete(self):
         """Delete the baby
@@ -506,13 +506,13 @@ class BabyAPI(object):
             start_date = dateutil.parser.parse(start)
         except ValueError:
             raise HTTPBadRequest("Invalid start date")
-        
+
         if end:
             try:
                 end_date = dateutil.parser.parse(end)
             except ValueError:
                 raise HTTPBadRequest("Invalid end date")
-        
+
         factory = models.lookup_entry_type(entry_type)
         if factory is None:
             raise HTTPBadRequest(u"Unknown entry_type: %s" % entry_type)
@@ -532,7 +532,7 @@ class BabyAPI(object):
                 attr = getattr(factory, key, None)
                 if attr is None:
                     raise HTTPBadRequest(u"Unknown property %s of type %s" % (key, entry_type,))
-                
+
                 try:
                     value = attr.property.columns[0].type.python_type(value)
                 except (AttributeError, ValueError,), e:
@@ -629,21 +629,21 @@ class EntryAPI(object):
                 start_date = dateutil.parser.parse(body['start'])
             except ValueError:
                 raise HTTPBadRequest("Invalid start date")
-            
+
             entry.start = start_date
-        
+
         if 'end' in body:
             try:
                 end_date = dateutil.parser.parse(body['end'])
             except ValueError:
                 raise HTTPBadRequest("Invalid end date")
-            
+
             entry.end = end_date
-        
+
         if 'note' in body:
             note = body['note']
             if not isinstance(note, basestring):
-                raise HTTPBadRequest("Invalid note")    
+                raise HTTPBadRequest("Invalid note")
             entry.note = note
 
         for key, value in body.items():
@@ -654,7 +654,7 @@ class EntryAPI(object):
                 attr = getattr(entry.__class__, key, None)
                 if attr is None:
                     raise HTTPBadRequest(u"Unknown property %s of type %s" % (key, entry.type,))
-                
+
                 try:
                     value = attr.property.columns[0].type.python_type(value)
                 except (AttributeError, ValueError,), e:
