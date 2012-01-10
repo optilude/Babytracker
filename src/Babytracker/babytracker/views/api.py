@@ -1,5 +1,4 @@
 import urllib
-import datetime
 import dateutil.parser
 
 from pyramid.view import view_config, view_defaults
@@ -139,14 +138,14 @@ class UserAPI(object):
 
         200 -> {
             'url' : '/api/test@example.org', // API root for user
-            'email': 'test@example.org',           // User's email address
-            'name' : 'John Smith',                 // User's full name
+            'email': 'test@example.org',     // User's email address
+            'name' : 'John Smith',           // User's full name
             'babies': [
                 {
                     'url'   : '/api/test@example.org/jill' // Baby URL
-                    'name'  : 'Jill',                            // Baby name
-                    'dob'   : '2011-01-01',                      // Baby date of birth
-                    'gender': 'f'                                // Baby gender
+                    'name'  : 'Jill',                      // Baby name
+                    'dob'   : '2011-01-01',                // Baby date of birth
+                    'gender': 'f'                          // Baby gender
                 },
                 ...
             ]
@@ -170,14 +169,14 @@ class UserAPI(object):
 
         200 -> {
             'url' : '/api/test@example.org', // API root for user
-            'email': 'test@example.org',           // User's email address
-            'name' : 'Jack Smith',                 // User's full name
+            'email': 'test@example.org',     // User's email address
+            'name' : 'Jack Smith',           // User's full name
             'babies': [
                 {
                     'url'   : '/api/test@example.org/jill' // Baby URL
-                    'name'  : 'Jill',                            // Baby name
-                    'dob'   : '2011-01-01',                      // Baby date of birth
-                    'gender': 'f'                                // Baby gender
+                    'name'  : 'Jill',                      // Baby name
+                    'dob'   : '2011-01-01',                // Baby date of birth
+                    'gender': 'f'                          // Baby gender
                 },
                 ...
             ]
@@ -226,6 +225,7 @@ class UserAPI(object):
         }
 
         400 -> name, dob or gender missing, or gender not 'm' or 'f'
+        403 -> Conception Denied
         409 -> name already exists
         """
 
@@ -248,12 +248,10 @@ class UserAPI(object):
             raise HTTPBadRequest("gender must be 'm' or 'f'")
 
         try:
-            dob_date = dateutil.parser.parse(dob)
+            dob_date = dateutil.parser.parse(dob).date()
         except ValueError:
             raise HTTPBadRequest("Invalid dob date")
 
-        if not isinstance(dob_date, datetime.date):
-            raise HTTPBadRequest("Invalid dob date")
 
         normalized_name = models.Baby.normalize_name(name)
         for baby in self.request.context.babies:
@@ -282,31 +280,30 @@ class BabyAPI(object):
 
         200 -> {
             'url'   : '/api/test@example.org/jill' // Baby URL
-            'name'  : 'Jill',                            // Baby name
-            'dob'   : '2011-01-01',                      // Baby date of birth
-            'gender': 'f'                                // Baby gender
+            'name'  : 'Jill',                      // Baby name
+            'dob'   : '2011-01-01',                // Baby date of birth
+            'gender': 'f'                          // Baby gender
         }
 
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to view details about this baby'
-            }
-        }
+        403 -> Not authorised to view this baby
         """
 
-        return {}
+        return baby_json(self.request.context)
 
     @view_config(name='entries', request_method='GET', permission=VIEW_PERMISSION)
     def entries(self):
         """Entries recorded for the baby
 
-        GET /api/test@example.org/jill/entries?start=2011-01-01T12:00:00&end=2011-01-01T12:00:00
+        GET /api/test@example.org/jill/entries?start=2011-01-01T12:00:00&end=2011-01-01T12:00:00&entry_type=breast_feed
 
         start and end contain ISO formatted dates or date-times to bound the
-        returned list. Both are optional.
+        returned list. entry_type limits to one type of entry only. All
+        parameters are optional.
 
         200 -> [
             {
+                'url'   : '/api/test@example.org/jill/1', // Entry URL
+
                 'entry_type': 'sleep',          // Or 'breast_feed', 'bottle_feed', 'mixed_feed', 'sleep', 'nappy_change'
                 'start': '2012-01-01 12:21:00',
                 'end': '2012-01-01 12:30:00',   // Optional
@@ -322,14 +319,37 @@ class BabyAPI(object):
             ...
         ]
 
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to view details about this baby'
-            }
-        }
+        400 -> Invalid date format
+        403 -> Not authorised to view information about this baby
         """
 
-        return {}
+        start_date = None
+        end_date = None
+
+        start = self.request.GET.get('start', None)
+        end = self.request.GET.get('end', None)
+        entry_type = self.request.GET.get('entry_type', None)
+
+        if start is not None:
+            try:
+                start_date = dateutil.parser.parse(start)
+            except ValueError:
+                raise HTTPBadRequest("Invalid start date")
+        
+        if end is not None:
+            try:
+                end_date = dateutil.parser.parse(end)
+            except ValueError:
+                raise HTTPBadRequest("Invalid end date")
+        
+        return [
+            entry_json(entry, self.request)
+            for entry in self.request.context.get_entries_between(
+                start=start_date,
+                end=end_date,
+                entry_type=entry_type,
+            )
+        ]
 
     @view_config(name='', request_method='PUT', permission=EDIT_PERMISSION)
     def edit(self):
@@ -339,25 +359,65 @@ class BabyAPI(object):
         {
             'name'  : 'Jillie',       // Optional
             'dob'   : '2011-01-01',   // Optional
-            'gender': 'f'             // Optional
+            'gender': 'f'             // Optional, should be 'm' or 'f'
         }
 
         200 -> {
             'url'   : '/api/test@example.org/jillie' // Baby URL - may change!
-            'name'  : 'Jillie',                            // Baby name
-            'dob'   : '2011-01-01',                        // Baby date of birth
-            'gender': 'f'                                  // Baby gender
+            'name'  : 'Jillie',                      // Baby name
+            'dob'   : '2011-01-01',                  // Baby date of birth
+            'gender': 'f'                            // Baby gender
         }
 
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to edit this baby'
-            }
+        400 -> Invalid date of birth, gender or no keys supplied
+        409 -> Name is used by another baby
+        403 -> Not authorised to edit this baby
         }
         """
 
-        return {}
+        try:
+            body = self.request.json_body
+        except ValueError, e:
+            raise HTTPBadRequest(str(e))
 
+        if not isinstance(body, dict):
+            raise HTTPBadRequest("JSON object with 'name', 'dob' and 'gender' expected")
+
+        name = body.get('name')
+        dob = body.get('dob')
+        gender = body.get('gender')
+
+        if not name and not dob and not gender:
+            raise HTTPBadRequest("JSON object with 'name', 'dob' and/or 'gender' expected")
+
+        if gender and gender not in ('m', 'f'):
+            raise HTTPBadRequest("gender must be 'm' or 'f'")
+
+        dob_date = None
+
+        if dob:
+            try:
+                dob_date = dateutil.parser.parse(dob).date()
+            except ValueError:
+                raise HTTPBadRequest("Invalid dob date")
+
+        baby = self.request.context
+        normalized_name = models.Baby.normalize_name(name)
+        baby_name = baby.__name__
+
+        for b in self.request.context.babies:
+            if b.__name__ != baby_name and b.__name__ == normalized_name:
+                raise HTTPConflict(u"Baby with name %s already exists" % name)
+
+        if dob_date:
+            baby.dob = dob_date
+        if name:
+            baby.name = name
+        if gender:
+            baby.gender = gender
+        
+        return baby_json(baby, self.request)
+    
     @view_config(name='', request_method='DELETE', permission=EDIT_PERMISSION)
     def delete(self):
         """Delete the baby
@@ -365,16 +425,25 @@ class BabyAPI(object):
         DELETE /api/test@example.org/jill
 
         200 -> {
+            'url' : '/api/test@example.org', // API root for user
+            'email': 'test@example.org',     // User's email address
+            'name' : 'John Smith',           // User's full name
+            'babies': [
+                ...
+            ]
         }
 
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to delete this baby'
-            }
-        }
+        403 -> Not authorised to delete this baby
         """
 
-        return {}
+        baby = self.request.context
+        user = baby.user
+
+        session = models.DBSession()
+        session.delete(baby)
+        session.flush()
+
+        return user_json(user, self.request)
 
     @view_config(name='', request_method='POST', permission=EDIT_PERMISSION)
     def create(self):
@@ -411,367 +480,211 @@ class BabyAPI(object):
             'contents': 'wet',              // For 'dirty' or 'none', for 'nappy_change'
         }
 
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to create entry for this baby'
-            }
-        }
+        400 -> Invalid request parameters
+        403 -> Not authorised to create entry for this baby
         """
 
-        return {}
+        try:
+            body = self.request.json_body
+        except ValueError, e:
+            raise HTTPBadRequest(str(e))
+
+        if not isinstance(body, dict):
+            raise HTTPBadRequest("JSON object expected")
+
+        entry_type = body.get('entry_type')
+        start = body.get('start')
+        end = body.get('end')
+        note = body.get('note')
+
+        start_date = end_date = None
+
+        if not entry_type or not start:
+            raise HTTPBadRequest("JSON object with 'entry_type' and 'start' expected")
+
+        try:
+            start_date = dateutil.parser.parse(start)
+        except ValueError:
+            raise HTTPBadRequest("Invalid start date")
+        
+        if end:
+            try:
+                end_date = dateutil.parser.parse(end)
+            except ValueError:
+                raise HTTPBadRequest("Invalid end date")
+        
+        factory = models.lookup_entry_type(entry_type)
+        if factory is None:
+            raise HTTPBadRequest(u"Unknown entry_type: %s" % entry_type)
+
+        kwargs = {
+            'baby': self.request.context,
+            'start': start_date,
+            'end': end_date,
+            'note': note
+        }
+
+        for key, value in body.items():
+            if key not in kwargs and key != 'entry_type':
+                # Convert value to correct builtin type based on SQLAlchemy
+                # column spec
+
+                attr = getattr(factory, key, None)
+                if attr is None:
+                    raise HTTPBadRequest(u"Unknown property %s of type %s" % (key, entry_type,))
+                
+                try:
+                    value = attr.property.columns[0].type.python_type(value)
+                except (AttributeError, ValueError,), e:
+                    raise HTTPBadRequest(u"Incompatible property %s of type %s: %s" % (key, entry_type, str(e)))
+
+                kwargs[key] = value
+
+        session = models.DBSession()
+        entry = factory(**kwargs)
+        session.add(entry)
+
+        return entry_json(entry, self.request)
 
 @view_defaults(context=models.Entry, route_name='api', renderer='json')
 class EntryAPI(object):
+
+    @view_config(name='', request_method='GET', permission=VIEW_PERMISSION)
+    def index(self):
+        """Details about the entry
+
+        GET /api/test@example.org/jill/1
+
+        200 -> {
+            'url'   : '/api/test@example.org/jill/1' // Entry URL
+
+            'entry_type': 'breast_feed',
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'left_duration': 10,            // For 'breast_feed' or 'mixed_feed'
+            'right_duration': 0,            // For 'breast_feed' or 'mixed_feed'
+            'amount': 100,                  // For 'bottle_feed'
+            'topup': 120,                   // For 'mixed_feed'
+            'duration': 30,                 // For 'sleep', in minutes
+            'contents': 'wet',              // For 'dirty' or 'none', for 'nappy_change'
+        }
+
+        403 -> Not authorised to view details about this entry
+        """
+
+        return entry_json(self.request.context, self.request)
+
+    @view_config(name='', request_method='PUT', permission=EDIT_PERMISSION)
+    def edit(self):
+        """Update the baby
+
+        PUT /api/test@example.org/jill/1
+        {
+            'start': '2012-01-01 12:21:00', // Optional
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'left_duration': 10,            // For 'breast_feed' or 'mixed_feed'
+            'right_duration': 0,            // For 'breast_feed' or 'mixed_feed'
+            'amount': 100,                  // For 'bottle_feed'
+            'topup': 120,                   // For 'mixed_feed'
+            'duration': 30,                 // For 'sleep', in minutes
+            'contents': 'wet',              // For 'dirty' or 'none', for 'nappy_change'
+        }
+
+        200 -> {
+            'url'   : '/api/test@example.org/jill/1' // Entry URL
+
+            'entry_type': 'breast_feed',
+            'start': '2012-01-01 12:21:00',
+            'end': '2012-01-01 12:30:00',   // Optional
+            'note': 'Note text',            // Optional
+
+            'left_duration': 10,            // For 'breast_feed' or 'mixed_feed'
+            'right_duration': 0,            // For 'breast_feed' or 'mixed_feed'
+            'amount': 100,                  // For 'bottle_feed'
+            'topup': 120,                   // For 'mixed_feed'
+            'duration': 30,                 // For 'sleep', in minutes
+            'contents': 'wet',              // For 'dirty' or 'none', for 'nappy_change'
+        }
+
+        400 -> Invalid parameters
+        403 -> Not authorised to edit this entry
+        """
+
+        try:
+            body = self.request.json_body
+        except ValueError, e:
+            raise HTTPBadRequest(str(e))
+
+        if not isinstance(body, dict):
+            raise HTTPBadRequest("JSON object expected")
+
+        entry = self.request.context
+
+        if 'start' in body:
+            try:
+                start_date = dateutil.parser.parse(body['start'])
+            except ValueError:
+                raise HTTPBadRequest("Invalid start date")
+            
+            entry.start = start_date
+        
+        if 'end' in body:
+            try:
+                end_date = dateutil.parser.parse(body['end'])
+            except ValueError:
+                raise HTTPBadRequest("Invalid end date")
+            
+            entry.end = end_date
+        
+        if 'note' in body:
+            note = body['note']
+            if not isinstance(note, basestring):
+                raise HTTPBadRequest("Invalid note")    
+            entry.note = note
+
+        for key, value in body.items():
+            if key not in ('id', 'type', 'start', 'end', 'note', 'baby', 'baby_id',):
+                # Convert value to correct builtin type based on SQLAlchemy
+                # column spec
+
+                attr = getattr(entry.__class__, key, None)
+                if attr is None:
+                    raise HTTPBadRequest(u"Unknown property %s of type %s" % (key, entry.type,))
+                
+                try:
+                    value = attr.property.columns[0].type.python_type(value)
+                except (AttributeError, ValueError,), e:
+                    raise HTTPBadRequest(u"Incompatible property %s of type %s: %s" % (key, entry.type, str(e)))
+
+                setattr(entry, key, value)
+
+        return entry_json(entry, self.request)
 
     @view_config(name='', request_method='DELETE', permission=EDIT_PERMISSION)
     def delete(self):
         """Delete the entry
 
-        DELETE /api/test@example.org/jill
+        DELETE /api/test@example.org/jill/1
 
         200 -> {
+            'url'   : '/api/test@example.org/jill' // Baby URL
+            'name'  : 'Jill',                      // Baby name
+            'dob'   : '2011-01-01',                // Baby date of birth
+            'gender': 'f'                          // Baby gender
         }
 
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to delete this entry'
-            }
-        }
+        403 -> Not authorised to delete this entry
         """
 
-        return {}
+        entry = self.request.context
+        baby = entry.baby
 
+        session = models.DBSession()
+        session.delete(entry)
+        session.flush()
 
-@view_defaults(context=models.BreastFeed, route_name='api', renderer='json')
-class BreastFeedAPI(object):
-
-    def __init__(self, request):
-        self.request = request
-
-    @view_config(name='', request_method='GET', permission=VIEW_PERMISSION)
-    def index(self):
-        """Details about the entry
-
-        GET /api/test@example.org/jill/1
-
-        200 -> {
-            'url'   : '/api/test@example.org/jill/1' // Entry URL
-
-            'entry_type': 'breast_feed',
-            'start': '2012-01-01 12:21:00',
-            'end': '2012-01-01 12:30:00',   // Optional
-            'note': 'Note text',            // Optional
-
-            'left_duration': 10,
-            'right_duration': 0,
-        }
-
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to view details about this entry'
-            }
-        }
-        """
-
-        return {}
-
-    @view_config(name='', request_method='PUT', permission=EDIT_PERMISSION)
-    def edit(self):
-        """Update the baby
-
-        PUT /api/test@example.org/jill/1
-        {
-            'start': '2012-01-01 12:21:00',
-            'end': '2012-01-01 12:30:00',   // Optional
-            'note': 'Note text',            // Optional
-
-            'left_duration': 10,
-            'right_duration': 0,
-        }
-
-        200 -> {
-            'url'   : '/api/test@example.org/jill/1' // Entry URL
-
-            'entry_type': 'breast_feed',
-            'start': '2012-01-01 12:21:00',
-            'end': '2012-01-01 12:30:00',   // Optional
-            'note': 'Note text',            // Optional
-
-            'left_duration': 10,
-            'right_duration': 0,
-        }
-
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to edit this entry'
-            }
-        }
-        """
-
-        return {}
-
-@view_defaults(context=models.BottleFeed, route_name='api', renderer='json')
-class BottleFeedAPI(object):
-
-    def __init__(self, request):
-        self.request = request
-
-    @view_config(name='', request_method='GET', permission=VIEW_PERMISSION)
-    def index(self):
-        """Details about the entry
-
-        GET /api/test@example.org/jill/1
-
-        200 -> {
-            'url'   : '/api/test@example.org/jill/1' // Entry URL
-
-            'entry_type': 'bottle_feed',
-            'start': '2012-01-01 12:21:00',
-            'end': '2012-01-01 12:30:00',   // Optional
-            'note': 'Note text',            // Optional
-
-            'amount': 100,
-        }
-
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to view details about this entry'
-            }
-        }
-        """
-
-        return {}
-
-    @view_config(name='', request_method='PUT', permission=EDIT_PERMISSION)
-    def edit(self):
-        """Update the baby
-
-        PUT /api/test@example.org/jill/1
-        {
-            'start': '2012-01-01 12:21:00',
-            'end': '2012-01-01 12:30:00',   // Optional
-            'note': 'Note text',            // Optional
-
-            'amount': 100,
-        }
-
-        200 -> {
-            'url'   : '/api/test@example.org/jill/1' // Entry URL
-
-            'entry_type': 'bottle_feed',
-            'start': '2012-01-01 12:21:00',
-            'end': '2012-01-01 12:30:00',   // Optional
-            'note': 'Note text',            // Optional
-
-            'amount': 100,
-        }
-
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to edit this entry'
-            }
-        }
-        """
-
-        return {}
-
-@view_defaults(context=models.MixedFeed, route_name='api', renderer='json')
-class MixedFeedAPI(object):
-
-    def __init__(self, request):
-        self.request = request
-
-    @view_config(name='', request_method='GET', permission=VIEW_PERMISSION)
-    def index(self):
-        """Details about the entry
-
-        GET /api/test@example.org/jill/1
-
-        200 -> {
-            'url'   : '/api/test@example.org/jill/1' // Entry URL
-
-            'entry_type': 'breast_feed',
-            'start': '2012-01-01 12:21:00',
-            'end': '2012-01-01 12:30:00',   // Optional
-            'note': 'Note text',            // Optional
-
-            'left_duration': 10,
-            'right_duration': 0,
-            'topup': 120,
-        }
-
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to view details about this entry'
-            }
-        }
-        """
-
-        return {}
-
-    @view_config(name='', request_method='PUT', permission=EDIT_PERMISSION)
-    def edit(self):
-        """Update the baby
-
-        PUT /api/test@example.org/jill/1
-        {
-            'start': '2012-01-01 12:21:00',
-            'end': '2012-01-01 12:30:00',   // Optional
-            'note': 'Note text',            // Optional
-
-            'left_duration': 10,
-            'right_duration': 0,
-            'topup': 120,
-        }
-
-        200 -> {
-            'url'   : '/api/test@example.org/jill/1' // Entry URL
-
-            'entry_type': 'breast_feed',
-            'start': '2012-01-01 12:21:00',
-            'end': '2012-01-01 12:30:00',   // Optional
-            'note': 'Note text',            // Optional
-
-            'left_duration': 10,
-            'right_duration': 0,
-            'topup': 120,
-        }
-
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to edit this entry'
-            }
-        }
-        """
-
-        return {}
-
-@view_defaults(context=models.Sleep, route_name='api', renderer='json')
-class SleepAPI(object):
-
-    def __init__(self, request):
-        self.request = request
-
-    @view_config(name='', request_method='GET', permission=VIEW_PERMISSION)
-    def index(self):
-        """Details about the entry
-
-        GET /api/test@example.org/jill/1
-
-        200 -> {
-            'url'   : '/api/test@example.org/jill/1' // Entry URL
-
-            'entry_type': 'breast_feed',
-            'start': '2012-01-01 12:21:00',
-            'end': '2012-01-01 12:30:00',   // Optional
-            'note': 'Note text',            // Optional
-
-            'duration': 100,
-        }
-
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to view details about this entry'
-            }
-        }
-        """
-
-        return {}
-
-    @view_config(name='', request_method='PUT', permission=EDIT_PERMISSION)
-    def edit(self):
-        """Update the baby
-
-        PUT /api/test@example.org/jill/1
-        {
-            'start': '2012-01-01 12:21:00',
-            'end': '2012-01-01 12:30:00',   // Optional
-            'note': 'Note text',            // Optional
-
-            'duration': 100,
-        }
-
-        200 -> {
-            'url'   : '/api/test@example.org/jill/1' // Entry URL
-
-            'entry_type': 'breast_feed',
-            'start': '2012-01-01 12:21:00',
-            'end': '2012-01-01 12:30:00',   // Optional
-            'note': 'Note text',            // Optional
-
-            'duration': 100,
-        }
-
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to edit this entry'
-            }
-        }
-        """
-
-        return {}
-
-@view_defaults(context=models.NappyChange, route_name='api', renderer='json')
-class NappyChangeAPI(object):
-
-    def __init__(self, request):
-        self.request = request
-
-    @view_config(name='', request_method='GET', permission=VIEW_PERMISSION)
-    def index(self):
-        """Details about the entry
-
-        GET /api/test@example.org/jill/1
-
-        200 -> {
-            'url'   : '/api/test@example.org/jill/1' // Entry URL
-
-            'entry_type': 'breast_feed',
-            'start': '2012-01-01 12:21:00',
-            'end': '2012-01-01 12:30:00',   // Optional
-            'note': 'Note text',            // Optional
-
-            'contents': 'wet',
-        }
-
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to view details about this entry'
-            }
-        }
-        """
-
-        return {}
-
-    @view_config(name='', request_method='PUT', permission=EDIT_PERMISSION)
-    def edit(self):
-        """Update the baby
-
-        PUT /api/test@example.org/jill/1
-        {
-            'start': '2012-01-01 12:21:00',
-            'end': '2012-01-01 12:30:00',   // Optional
-            'note': 'Note text',            // Optional
-
-            'contents': 'wet',
-        }
-
-        200 -> {
-            'url'   : '/api/test@example.org/jill/1' // Entry URL
-
-            'entry_type': 'breast_feed',
-            'start': '2012-01-01 12:21:00',
-            'end': '2012-01-01 12:30:00',   // Optional
-            'note': 'Note text',            // Optional
-
-            'contents': 'wet',
-        }
-
-        403 -> {
-            'error_detail': {
-                'message': 'Not authorised to edit this entry'
-            }
-        }
-        """
-
-        return {}
+        return baby_json(baby, self.request)

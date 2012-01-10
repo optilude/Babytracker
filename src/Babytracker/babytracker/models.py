@@ -208,6 +208,19 @@ class Baby(Base):
             'gender': self.gender,
         }
 
+# Registry of entry types - used as class decorator
+_entry_types = {}
+def entry_type(cls):
+    """Class decorator to register an entry type based on the mapper arg
+    polymorphic_identity.
+    """
+    name = cls.__mapper_args__['polymorphic_identity']
+    _entry_types[name] = cls
+    return cls
+
+def lookup_entry_type(name, default=None):
+    return _entry_types.get(name, default)
+
 class Entry(Base):
     implements(IJSONCapable)
     __tablename__ = 'entries'
@@ -253,6 +266,7 @@ class Entry(Base):
             'note': self.note,
         }
 
+@entry_type
 class BreastFeed(Entry):
     __mapper_args__ = {'polymorphic_identity': 'breast_feed'}
 
@@ -274,6 +288,7 @@ class BreastFeed(Entry):
         })
         return entry
 
+@entry_type
 class BottleFeed(Entry):
     __mapper_args__ = {'polymorphic_identity': 'bottle_feed'}
 
@@ -292,6 +307,7 @@ class BottleFeed(Entry):
         })
         return entry
 
+@entry_type
 class MixedFeed(BreastFeed):
     __mapper_args__ = {'polymorphic_identity': 'mixed_feed'}
 
@@ -315,6 +331,7 @@ class MixedFeed(BreastFeed):
         })
         return entry
 
+@entry_type
 class Sleep(Entry):
     __mapper_args__ = {'polymorphic_identity': 'sleep'}
 
@@ -333,6 +350,7 @@ class Sleep(Entry):
         })
         return entry
 
+@entry_type
 class NappyChange(Entry):
     __mapper_args__ = {'polymorphic_identity': 'nappy_change'}
 
