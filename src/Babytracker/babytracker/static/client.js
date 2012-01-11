@@ -49,6 +49,9 @@ BabyTracker.prototype = {
                 password: password
             }),
             processData: false,
+            xhrFields: {
+                withCredentials: true
+            },
             success: function(data, textStatus, jqXHR) {
                 user = new BabyTracker.User(data);
                 self.user = user;

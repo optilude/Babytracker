@@ -117,7 +117,7 @@ class RootAPI(object):
         }
         """
 
-        headers = forget(self.request.context)
+        headers = forget(self.request)
         self.request.response.headers.update(headers)
 
         return {
