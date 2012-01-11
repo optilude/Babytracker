@@ -9,9 +9,8 @@
   <link rel="stylesheet" href="${request.static_url('babytracker:static/babytracker.css')}" type="text/css" media="screen" charset="utf-8" />
   <link rel="stylesheet" href="${request.static_url('babytracker:static/jquery.tools/dateinput.css')}" type="text/css" media="screen" charset="utf-8" />
 
-  <script src="http://code.jquery.com/jquery-1.6.4.min.js"></script>
+  <script src="${request.static_url('babytracker:static/jquery-1.6.4.min.js')}"></script>
   <script src="${request.static_url('babytracker:static/jquery.tools/jquery.tools.min.js')}"></script>
-  <script src="${request.static_url('babytracker:static/jquery.cookie.js')}"></script>
 
   <script src="${request.static_url('babytracker:static/bootstrap/js/bootstrap-alerts.js')}"></script>
   <script src="${request.static_url('babytracker:static/bootstrap/js/bootstrap-twipsy.js')}"></script>

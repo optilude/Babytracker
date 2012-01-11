@@ -3,36 +3,46 @@ import dateutil.parser
 
 from pyramid.view import view_config, view_defaults
 from pyramid.traversal import resource_path
-from pyramid.httpexceptions import HTTPBadRequest, HTTPUnauthorized, HTTPConflict
 from pyramid.security import remember, forget
 
 from babytracker.interfaces import VIEW_PERMISSION, EDIT_PERMISSION, SIGNUP_PERMISSION
 from babytracker import models
 
-def api_resource_path(context, request):
-    return request.current_route_path(traverse=urllib.unquote(resource_path(context)[1:]))
+def api_resource_url(context, request):
+    return request.current_route_url(traverse=urllib.unquote(resource_path(context)[1:]))
 
 def user_json(user, request):
     data = user.to_json_dict()
-    data['url'] = api_resource_path(user, request)
+    data['url'] = api_resource_url(user, request)
     data['babies'] = [baby_json(baby, request) for baby in user.babies]
     return data
 
 def baby_json(baby, request):
     data = baby.to_json_dict()
-    data['url'] = api_resource_path(baby, request)
+    data['url'] = api_resource_url(baby, request)
     return data
 
 def entry_json(entry, request):
     data = entry.to_json_dict()
-    data['url'] = api_resource_path(entry, request)
+    data['url'] = api_resource_url(entry, request)
     return data
+
+# We use this instead of raising exceptions because it allows us to easily
+# return JSON responses
+def error_json(code, message, request):
+    request.response.status_int = code
+    return {'error': message}
 
 @view_defaults(context=models.Root, route_name='api', renderer='json')
 class RootAPI(object):
 
     def __init__(self, request):
         self.request = request
+
+    @view_config(request_method='OPTIONS')
+    def index_options(self):
+        self.request.response.headers['Access-Control-Allow-Methods'] = 'GET'
+        return None
 
     @view_config(request_method='GET')
     def index(self):
@@ -46,12 +56,17 @@ class RootAPI(object):
         }
         """
 
-        prefix = api_resource_path(self.request.context, self.request)
+        prefix = api_resource_url(self.request.context, self.request)
 
         return {
             'login_url': prefix + '@@login',
             'logout_url': prefix + '@@logout',
         }
+    
+    @view_config(name='login', request_method='OPTIONS')
+    def login_options(self):
+        self.request.response.headers['Access-Control-Allow-Methods'] = 'POST'
+        return None
 
     @view_config(name='login', request_method='POST', permission=SIGNUP_PERMISSION)
     def login(self):
@@ -86,25 +101,30 @@ class RootAPI(object):
         try:
             body = self.request.json_body
         except ValueError, e:
-            raise HTTPBadRequest(str(e))
+            return error_json(400, str(e), self.request)
 
         if not isinstance(body, dict):
-            raise HTTPBadRequest("JSON object with 'username' and 'password' expected")
+            return error_json(400, "JSON object with 'username' and 'password' expected", self.request)
 
         username = body.get('username')
         password = body.get('password')
 
         if not password or not username:
-            raise HTTPBadRequest("JSON object with 'username' and 'password' expected")
+            return error_json(400, "JSON object with 'username' and 'password' expected", self.request)
 
         user = models.User.authenticate(username, password)
         if user is None:
-            raise HTTPUnauthorized("Invalid credentials")
+            return error_json(401, "Invalid credentials", self.request)
 
         headers = remember(self.request, user.__name__)
-        self.request.response.headers.update(headers)
-
+        self.request.response.headerlist.extend(headers)
+        
         return user_json(user, self.request)
+
+    @view_config(name='logout', request_method='OPTIONS')
+    def logout_options(self):
+        self.request.response.headers['Access-Control-Allow-Methods'] = 'POST'
+        return None
 
     @view_config(name='logout', request_method='POST')
     def logout(self):
@@ -118,10 +138,10 @@ class RootAPI(object):
         """
 
         headers = forget(self.request)
-        self.request.response.headers.update(headers)
+        self.request.response.headerlist.extend(headers)
 
         return {
-            'url': api_resource_path(self.request.context, self.request)
+            'url': api_resource_url(self.request.context, self.request)
         }
 
 @view_defaults(context=models.User, route_name='api', renderer='json')
@@ -130,6 +150,11 @@ class UserAPI(object):
     def __init__(self, request):
         self.request = request
 
+    @view_config(name='', request_method='OPTIONS')
+    def options(self):
+        self.request.response.headers['Access-Control-Allow-Methods'] = 'GET POST PUT'
+        return None
+    
     @view_config(name='', request_method='GET', permission=VIEW_PERMISSION)
     def index(self):
         """Details about the user
@@ -182,22 +207,23 @@ class UserAPI(object):
             ]
         }
 
+        400 -> Invalid request
         403 -> Not logged in or attempting to edit another user's details
         """
 
         try:
             body = self.request.json_body
         except ValueError, e:
-            raise HTTPBadRequest(str(e))
+            return error_json(400, str(e), self.request)
 
         if not isinstance(body, dict):
-            raise HTTPBadRequest("JSON object with 'name' and/or 'password' expected")
+            return error_json(400, "JSON object with 'name' and/or 'password' expected", self.request)
 
         name = body.get('name')
         password = body.get('password')
 
         if not password and not name:
-            raise HTTPBadRequest("JSON object with 'name' and/or 'password' expected")
+            return error_json(400, "JSON object with 'name' and/or 'password' expected", self.request)
 
         if name:
             self.request.context.name = name
@@ -232,31 +258,31 @@ class UserAPI(object):
         try:
             body = self.request.json_body
         except ValueError, e:
-            raise HTTPBadRequest(str(e))
+            return error_json(400, str(e), self.request)
 
         if not isinstance(body, dict):
-            raise HTTPBadRequest("JSON object with 'name', 'dob' and 'gender' expected")
+            return error_json(400, "JSON object with 'name', 'dob' and 'gender' expected", self.request)
 
         name = body.get('name')
         dob = body.get('dob')
         gender = body.get('gender')
 
         if not name or not dob or not gender:
-            raise HTTPBadRequest("JSON object with 'name', 'dob' and 'gender' expected")
+            return error_json(400, "JSON object with 'name', 'dob' and 'gender' expected", self.request)
 
         if gender not in ('m', 'f'):
-            raise HTTPBadRequest("gender must be 'm' or 'f'")
+            return error_json(400, "gender must be 'm' or 'f'", self.request)
 
         try:
             dob_date = dateutil.parser.parse(dob).date()
         except ValueError:
-            raise HTTPBadRequest("Invalid dob date")
+            return error_json(400, "Invalid dob date", self.request)
 
 
         normalized_name = models.Baby.normalize_name(name)
         for baby in self.request.context.babies:
             if baby.__name__ == normalized_name:
-                raise HTTPConflict(u"Baby with name %s already exists" % name)
+                return error_json(409, u"Baby with name %s already exists" % name, self.request)
 
         session = models.DBSession()
         baby = models.Baby(self.request.context, dob_date, name, gender)
@@ -271,6 +297,11 @@ class BabyAPI(object):
 
     def __init__(self, request):
         self.request = request
+
+    @view_config(name='', request_method='OPTIONS')
+    def options(self):
+        self.request.response.headers['Access-Control-Allow-Methods'] = 'GET POST PUT DELETE'
+        return None
 
     @view_config(name='', request_method='GET', permission=VIEW_PERMISSION)
     def index(self):
@@ -289,6 +320,11 @@ class BabyAPI(object):
         """
 
         return baby_json(self.request.context)
+    
+    @view_config(name='entries', request_method='OPTIONS')
+    def entries_options(self):
+        self.request.response.headers['Access-Control-Allow-Methods'] = 'GET'
+        return None
 
     @view_config(name='entries', request_method='GET', permission=VIEW_PERMISSION)
     def entries(self):
@@ -334,13 +370,13 @@ class BabyAPI(object):
             try:
                 start_date = dateutil.parser.parse(start)
             except ValueError:
-                raise HTTPBadRequest("Invalid start date")
+                return error_json(400, "Invalid start date", self.request)
 
         if end is not None:
             try:
                 end_date = dateutil.parser.parse(end)
             except ValueError:
-                raise HTTPBadRequest("Invalid end date")
+                return error_json(400, "Invalid end date", self.request)
 
         return [
             entry_json(entry, self.request)
@@ -378,20 +414,20 @@ class BabyAPI(object):
         try:
             body = self.request.json_body
         except ValueError, e:
-            raise HTTPBadRequest(str(e))
+            return error_json(400, str(e), self.request)
 
         if not isinstance(body, dict):
-            raise HTTPBadRequest("JSON object with 'name', 'dob' and 'gender' expected")
+            return error_json(400, "JSON object with 'name', 'dob' and 'gender' expected", self.request)
 
         name = body.get('name')
         dob = body.get('dob')
         gender = body.get('gender')
 
         if not name and not dob and not gender:
-            raise HTTPBadRequest("JSON object with 'name', 'dob' and/or 'gender' expected")
+            return error_json(400, "JSON object with 'name', 'dob' and/or 'gender' expected", self.request)
 
         if gender and gender not in ('m', 'f'):
-            raise HTTPBadRequest("gender must be 'm' or 'f'")
+            return error_json(400, "gender must be 'm' or 'f'", self.request)
 
         dob_date = None
 
@@ -399,7 +435,7 @@ class BabyAPI(object):
             try:
                 dob_date = dateutil.parser.parse(dob).date()
             except ValueError:
-                raise HTTPBadRequest("Invalid dob date")
+                return error_json(400, "Invalid dob date", self.request)
 
         baby = self.request.context
         normalized_name = models.Baby.normalize_name(name)
@@ -407,7 +443,7 @@ class BabyAPI(object):
 
         for b in self.request.context.babies:
             if b.__name__ != baby_name and b.__name__ == normalized_name:
-                raise HTTPConflict(u"Baby with name %s already exists" % name)
+                return error_json(409, u"Baby with name %s already exists" % name, self.request)
 
         if dob_date:
             baby.dob = dob_date
@@ -487,10 +523,10 @@ class BabyAPI(object):
         try:
             body = self.request.json_body
         except ValueError, e:
-            raise HTTPBadRequest(str(e))
+            return error_json(400, str(e), self.request)
 
         if not isinstance(body, dict):
-            raise HTTPBadRequest("JSON object expected")
+            return error_json(400, "JSON object expected", self.request)
 
         entry_type = body.get('entry_type')
         start = body.get('start')
@@ -500,22 +536,22 @@ class BabyAPI(object):
         start_date = end_date = None
 
         if not entry_type or not start:
-            raise HTTPBadRequest("JSON object with 'entry_type' and 'start' expected")
+            return error_json(400, "JSON object with 'entry_type' and 'start' expected", self.request)
 
         try:
             start_date = dateutil.parser.parse(start)
         except ValueError:
-            raise HTTPBadRequest("Invalid start date")
+            return error_json(400, "Invalid start date", self.request)
 
         if end:
             try:
                 end_date = dateutil.parser.parse(end)
             except ValueError:
-                raise HTTPBadRequest("Invalid end date")
+                return error_json(400, "Invalid end date", self.request)
 
         factory = models.lookup_entry_type(entry_type)
         if factory is None:
-            raise HTTPBadRequest(u"Unknown entry_type: %s" % entry_type)
+            return error_json(400, u"Unknown entry_type: %s" % entry_type, self.request)
 
         kwargs = {
             'baby': self.request.context,
@@ -531,12 +567,12 @@ class BabyAPI(object):
 
                 attr = getattr(factory, key, None)
                 if attr is None:
-                    raise HTTPBadRequest(u"Unknown property %s of type %s" % (key, entry_type,))
+                    return error_json(400, u"Unknown property %s of type %s" % (key, entry_type,), self.request)
 
                 try:
                     value = attr.property.columns[0].type.python_type(value)
                 except (AttributeError, ValueError,), e:
-                    raise HTTPBadRequest(u"Incompatible property %s of type %s: %s" % (key, entry_type, str(e)))
+                    return error_json(400, u"Incompatible property %s of type %s: %s" % (key, entry_type, str(e)), self.request)
 
                 kwargs[key] = value
 
@@ -548,6 +584,11 @@ class BabyAPI(object):
 
 @view_defaults(context=models.Entry, route_name='api', renderer='json')
 class EntryAPI(object):
+
+    @view_config(name='', request_method='OPTIONS')
+    def options(self):
+        self.request.response.headers['Access-Control-Allow-Methods'] = 'GET PUT DELETE'
+        return None
 
     @view_config(name='', request_method='GET', permission=VIEW_PERMISSION)
     def index(self):
@@ -617,10 +658,10 @@ class EntryAPI(object):
         try:
             body = self.request.json_body
         except ValueError, e:
-            raise HTTPBadRequest(str(e))
+            return error_json(400, str(e), self.request)
 
         if not isinstance(body, dict):
-            raise HTTPBadRequest("JSON object expected")
+            return error_json(400, "JSON object expected", self.request)
 
         entry = self.request.context
 
@@ -628,7 +669,7 @@ class EntryAPI(object):
             try:
                 start_date = dateutil.parser.parse(body['start'])
             except ValueError:
-                raise HTTPBadRequest("Invalid start date")
+                return error_json(400, "Invalid start date", self.request)
 
             entry.start = start_date
 
@@ -636,14 +677,14 @@ class EntryAPI(object):
             try:
                 end_date = dateutil.parser.parse(body['end'])
             except ValueError:
-                raise HTTPBadRequest("Invalid end date")
+                return error_json(400, "Invalid end date", self.request)
 
             entry.end = end_date
 
         if 'note' in body:
             note = body['note']
             if not isinstance(note, basestring):
-                raise HTTPBadRequest("Invalid note")
+                return error_json(400, "Invalid note", self.request)
             entry.note = note
 
         for key, value in body.items():
@@ -653,12 +694,12 @@ class EntryAPI(object):
 
                 attr = getattr(entry.__class__, key, None)
                 if attr is None:
-                    raise HTTPBadRequest(u"Unknown property %s of type %s" % (key, entry.type,))
+                    return error_json(400, u"Unknown property %s of type %s" % (key, entry.type,), self.request)
 
                 try:
                     value = attr.property.columns[0].type.python_type(value)
                 except (AttributeError, ValueError,), e:
-                    raise HTTPBadRequest(u"Incompatible property %s of type %s: %s" % (key, entry.type, str(e)))
+                    return error_json(400, u"Incompatible property %s of type %s: %s" % (key, entry.type, str(e)), self.request)
 
                 setattr(entry, key, value)
 

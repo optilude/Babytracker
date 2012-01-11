@@ -1,0 +1,42 @@
+<html>
+<head>
+<script src="jquery-1.6.4.min.js"></script>
+<script src="client.js"></script>
+<script type="text/javascript">
+
+$(document).ready(function() {
+    
+
+    var tracker = new BabyTracker('http://localhost:6543/api/');
+    tracker.initialize(function(root) {
+        $("#out").append("Got login url " + root.login_url + '\n');
+
+        root.logout();
+
+        root.login('one@example.org', 'secret', function(user) {
+            $("#out").append("Got user " + JSON.stringify(user) + '\n');
+
+
+            user.update(function(newUser) {
+                $("#out").append("Updated user " + JSON.stringify(newUser) + '\n');
+            });
+        }, function(error, response) {
+            $("#out").append("Error " + error + "\n" + response.error + "\n");
+        });
+
+    });
+
+
+
+});
+
+</script>
+</head>
+<body>
+
+<h1>Output</h1>
+<pre id="out" />
+
+
+</body>
+</html>

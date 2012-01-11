@@ -10,77 +10,6 @@ var BabyTracker = function(url) {
     this.logout_url = url + '@@logout';
 };
 
-BabyTracker.prototype = {
-
-    /**
-     * Initialise.
-     * Callback is called with the initialised root object.
-     */
-    initialize: function(callback) {
-        var self = this;
-        jQuery.ajax({
-            type: 'GET',
-            url: self.url,
-            dataType: 'json',
-            success: function(data, textStatus, jqXHR) {
-                self.login_url = data['login_url'];
-                self.logout_url = data['logout_url'];
-                if(callback != undefined) {
-                    callback(self);
-                }
-            }
-        });
-    },
-
-    /**
-     * Log in.
-     * Callback is called with the root BabyTracker object and a User
-     * object for the logged in session.
-     */
-    login: function(username, password, callback) {
-        var self = this;
-        jQuery.ajax({
-            type: 'POST',
-            url: self.login_url,
-            dataType: 'json',
-            contentType: 'application/json',
-            data: JSON.stringify({
-                username: username,
-                password: password
-            }),
-            processData: false,
-            xhrFields: {
-                withCredentials: true
-            },
-            success: function(data, textStatus, jqXHR) {
-                user = new BabyTracker.User(data);
-                self.user = user;
-                if(callback != undefined) {
-                    callback(user);
-                }
-            }
-        });
-    },
-
-    /**
-     * Log out.
-     * Callback is called with the root BabyTracker object.
-     */
-    logout: function(callback) {
-        var self = this;
-        jQuery.ajax({
-            type: 'POST',
-            url: self.logout_url,
-            dataType: 'json',
-            success: function(data, textStatus, jqXHR) {
-                if(callback != undefined) {
-                    callback(self);
-                }
-            }
-        });
-    }
-};
-
 /**
  * Entry factory. data must contain a key entry_type and whatever
  * data is required for that entry type.
@@ -92,9 +21,119 @@ BabyTracker._createEntry = function(data) {
 };
 BabyTracker._entryTypeMap = {}; // poplated below
 
-// Domain model (namespaced). These match the JSON representations
-// expected/returned by the server-side API. Functions are augmented by
-// prototype.
+/**
+ * Generic error handler. Error callbacks will receive two
+ * parameters: the HTTP status code of the response, and
+ * a JSON object returned. This will generally contain an
+ * 'error' key with an error message.
+ */
+BabyTracker.handleError = function(jqXHR, textStatus, errorThrown, errorCallback) {
+    if(errorCallback != undefined) {
+        var contentType = jqXHR.getResponseHeader('Content-Type');
+        if(contentType && contentType.indexOf('application/json') == 0) {
+            errorCallback(jqXHR.status, jQuery.parseJSON(jqXHR.responseText));    
+        } else {
+            errorCallback(jqXHR.status, {'error': jqXHR.responseText});
+        }
+    }
+};
+
+BabyTracker.prototype = {
+
+    /**
+     * Initialise.
+     * Callback is called with the initialised root object.
+     */
+    initialize: function(callback, errorCallback) {
+        var self = this;
+        jQuery.ajax({
+            type: 'GET',
+            url: self.url,
+            dataType: 'json',
+            success: function(data, textStatus, jqXHR) {
+                self.login_url = data['login_url'];
+                self.logout_url = data['logout_url'];
+                if(callback != undefined) {
+                    callback(self);
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                BabyTracker.handleError(jqXHR, textStatus, errorThrown, errorCallback);
+            }
+        });
+    },
+
+    /**
+     * Log in.
+     * Callback is called with the root BabyTracker object and a User
+     * object for the logged in session.
+     * Error callback is called in case of a failure with the HTTP
+     * response code and the error information returned by the server.
+     */
+    login: function(username, password, callback, errorCallback) {
+        var self = this;
+        jQuery.ajax({
+            type: 'POST',
+            url: self.login_url,
+            dataType: 'json',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                username: username,
+                password: password
+            }),
+            processData: false,
+            crossDomain: true,
+            xhrFields: {
+                withCredentials: true
+            },
+            async: false,
+            success: function(data, textStatus, jqXHR) {
+                user = new BabyTracker.User(data);
+                self.user = user;
+                if(callback != undefined) {
+                    callback(user);
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                BabyTracker.handleError(jqXHR, textStatus, errorThrown, errorCallback);
+            }
+        });
+    },
+
+    /**
+     * Log out.
+     * Callback is called with the root BabyTracker object.
+     * Error callback is called in case of a failure with the HTTP
+     * response code and the error information returned by the server.
+     */
+    logout: function(callback, errorCallback) {
+        var self = this;
+        jQuery.ajax({
+            type: 'POST',
+            url: self.logout_url,
+            dataType: 'json',
+            xhrFields: {
+                withCredentials: true
+            },
+            crossDomain: true,
+            async: false,
+            success: function(data, textStatus, jqXHR) {
+                if(callback != undefined) {
+                    callback(self);
+                }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                BabyTracker.handleError(jqXHR, textStatus, errorThrown, errorCallback);
+            }
+        });
+    }
+};
+
+/**
+ * Domain model (namespaced). These match the JSON representations
+ * expected/returned by the server-side API. Functions are augmented by
+ * prototype.
+ */
 
 BabyTracker.User = function(data) {
     this.url = data['url'] || null;
@@ -114,19 +153,28 @@ BabyTracker.User.prototype = {
     /**
      * Update this user object with details from the server.
      * Callback is called with the updated User object.
+     * Error callback is called in case of a failure with the HTTP
+     * response code and the error information returned by the server.
      */
-    update: function(callback) {
+    update: function(callback, errorCallback) {
         var self = this;
         jQuery.ajax({
             type: 'GET',
             url: self.url,
             dataType: 'json',
+            xhrFields: {
+                withCredentials: true
+            },
+            crossDomain: true,
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
 
                 if(callback != undefined) {
                     callback(self);
                 }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                BabyTracker.handleError(jqXHR, textStatus, errorThrown, errorCallback);
             }
         });
     },
@@ -134,8 +182,10 @@ BabyTracker.User.prototype = {
     /**
      * Save changes to this user object to the server.
      * Callback is called with the updated User object.
+     * Error callback is called in case of a failure with the HTTP
+     * response code and the error information returned by the server.
      */
-    save: function(callback) {
+    save: function(callback, errorCallback) {
         var self = this;
         jQuery.ajax({
             type: 'PUT',
@@ -144,12 +194,19 @@ BabyTracker.User.prototype = {
             contentType: 'application/json',
             data: JSON.stringify(self),
             processData: false,
+            xhrFields: {
+                withCredentials: true
+            },
+            crossDomain: true,
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
 
                 if(callback != undefined) {
                     callback(self);
                 }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                BabyTracker.handleError(jqXHR, textStatus, errorThrown, errorCallback);
             }
         });
     },
@@ -157,8 +214,10 @@ BabyTracker.User.prototype = {
     /**
      * Add a new Baby object
      * Callback is called with the User object and the new Baby object.
+     * Error callback is called in case of a failure with the HTTP
+     * response code and the error information returned by the server.
      */
-    addBaby: function(baby, callback) {
+    addBaby: function(baby, callback, errorCallback) {
         var self = this;
         jQuery.ajax({
             type: 'POST',
@@ -167,6 +226,10 @@ BabyTracker.User.prototype = {
             contentType: 'application/json',
             data: JSON.stringify(baby),
             processData: false,
+            xhrFields: {
+                withCredentials: true
+            },
+            crossDomain: true,
             success: function(data, textStatus, jqXHR) {
                 baby = BabyTracker.Baby(data);
                 self.babies.push(baby)
@@ -174,6 +237,9 @@ BabyTracker.User.prototype = {
                 if(callback != undefined) {
                     callback(self, baby);
                 }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                BabyTracker.handleError(jqXHR, textStatus, errorThrown, errorCallback);
             }
         });
     }
@@ -191,19 +257,28 @@ BabyTracker.Baby.prototype = {
     /**
      * Update this baby object with details from the server.
      * Callback is called with the updated Baby object.
+     * Error callback is called in case of a failure with the HTTP
+     * response code and the error information returned by the server.
      */
-    update: function(callback) {
+    update: function(callback, errorCallback) {
         var self = this;
         jQuery.ajax({
             type: 'GET',
             url: self.url,
             dataType: 'json',
+            xhrFields: {
+                withCredentials: true
+            },
+            crossDomain: true,
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
 
                 if(callback != undefined) {
                     callback(self);
                 }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                BabyTracker.handleError(jqXHR, textStatus, errorThrown, errorCallback);
             }
         });
     },
@@ -211,8 +286,10 @@ BabyTracker.Baby.prototype = {
     /**
      * Save changes to this baby object to the server
      * Callback is called with the updated Baby object.
+     * Error callback is called in case of a failure with the HTTP
+     * response code and the error information returned by the server.
      */
-    save: function(callback) {
+    save: function(callback, errorCallback) {
         var self = this;
         jQuery.ajax({
             type: 'PUT',
@@ -221,12 +298,19 @@ BabyTracker.Baby.prototype = {
             contentType: 'application/json',
             data: JSON.stringify(self),
             processData: false,
+            xhrFields: {
+                withCredentials: true
+            },
+            crossDomain: true,
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
 
                 if(callback != undefined) {
                     callback(self);
                 }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                BabyTracker.handleError(jqXHR, textStatus, errorThrown, errorCallback);
             }
         });
     },
@@ -234,19 +318,28 @@ BabyTracker.Baby.prototype = {
     /**
      * Delete this baby object from the server
      * Callback is called with the parent User object.
+     * Error callback is called in case of a failure with the HTTP
+     * response code and the error information returned by the server.
      */
-    delete: function(callback) {
+    delete: function(callback, errorCallback) {
         var self = this;
         jQuery.ajax({
             type: 'DELETE',
             url: self.url,
             dataType: 'json',
+            xhrFields: {
+                withCredentials: true
+            },
+            crossDomain: true,
             success: function(data, textStatus, jqXHR) {
                 var user = new BabyTracker.User(data);
 
                 if(callback != undefined) {
                     callback(user);
                 }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                BabyTracker.handleError(jqXHR, textStatus, errorThrown, errorCallback);
             }
         });
     },
@@ -256,8 +349,10 @@ BabyTracker.Baby.prototype = {
      * optionally filtering by entry type. start, end and entry_type may be
      * null.
      * Callback is called with the Baby object and a list of Entry objects.
+     * Error callback is called in case of a failure with the HTTP
+     * response code and the error information returned by the server.
      */
-    getEntries: function(start, end, entry_type, callback) {
+    getEntries: function(start, end, entry_type, callback, errorCallback) {
         // TODO: Date conversion?
         var self = this;
         jQuery.ajax({
@@ -270,6 +365,10 @@ BabyTracker.Baby.prototype = {
                 entry_type: entry_type,
             }),
             processData: false,
+            xhrFields: {
+                withCredentials: true
+            },
+            crossDomain: true,
             success: function(data, textStatus, jqXHR) {
                 var arr = [];
                 for(var i = 0; i < data.length; ++i) {
@@ -279,6 +378,9 @@ BabyTracker.Baby.prototype = {
                 if(callback != undefined) {
                     callback(self, arr);
                 }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                BabyTracker.handleError(jqXHR, textStatus, errorThrown, errorCallback);
             }
         });
     },
@@ -286,8 +388,10 @@ BabyTracker.Baby.prototype = {
     /**
      * Add a new entry object.
      * Callback is called with the Baby object and the new Entry object.
+     * Error callback is called in case of a failure with the HTTP
+     * response code and the error information returned by the server.
      */
-    addEntry: function(entry, callback) {
+    addEntry: function(entry, callback, errorCallback) {
         var self = this;
         jQuery.ajax({
             type: 'POST',
@@ -296,12 +400,19 @@ BabyTracker.Baby.prototype = {
             contentType: 'application/json',
             data: JSON.stringify(entry),
             processData: false,
+            xhrFields: {
+                withCredentials: true
+            },
+            crossDomain: true,
             success: function(data, textStatus, jqXHR) {
                 entry = BabyTracker._createEntry(data);
 
                 if(callback != undefined) {
                     callback(self, entry);
                 }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                BabyTracker.handleError(jqXHR, textStatus, errorThrown, errorCallback);
             }
         });
     }
@@ -316,19 +427,28 @@ BabyTracker.Entry.prototype = {
     /**
      * Update this entry object with details from the server
      * Callback is called with the updated Entry object.
+     * Error callback is called in case of a failure with the HTTP
+     * response code and the error information returned by the server.
      */
-    update: function(callback) {
+    update: function(callback, errorCallback) {
         var self = this;
         jQuery.ajax({
             type: 'GET',
             url: self.url,
             dataType: 'json',
+            xhrFields: {
+                withCredentials: true
+            },
+            crossDomain: true,
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
 
                 if(callback != undefined) {
                     callback(self);
                 }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                BabyTracker.handleError(jqXHR, textStatus, errorThrown, errorCallback);
             }
         });
     },
@@ -336,6 +456,8 @@ BabyTracker.Entry.prototype = {
     /**
      * Save changes to this entry object to the server
      * Callback is called with the updated Entry object.
+     * Error callback is called in case of a failure with the HTTP
+     * response code and the error information returned by the server.
      */
     save: function() {
         var self = this;
@@ -346,12 +468,19 @@ BabyTracker.Entry.prototype = {
             contentType: 'application/json',
             data: JSON.stringify(self),
             processData: false,
+            xhrFields: {
+                withCredentials: true
+            },
+            crossDomain: true,
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
 
                 if(callback != undefined) {
                     callback(self);
                 }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                BabyTracker.handleError(jqXHR, textStatus, errorThrown, errorCallback);
             }
         });
     },
@@ -359,6 +488,8 @@ BabyTracker.Entry.prototype = {
     /**
      * Delete this baby object from the server
      * Callback is called with the parent Baby object.
+     * Error callback is called in case of a failure with the HTTP
+     * response code and the error information returned by the server.
      */
     delete: function() {
         var self = this;
@@ -366,12 +497,19 @@ BabyTracker.Entry.prototype = {
             type: 'DELETE',
             url: self.url,
             dataType: 'json',
+            xhrFields: {
+                withCredentials: true
+            },
+            crossDomain: true,
             success: function(data, textStatus, jqXHR) {
                 var baby = new BabyTracker.Baby(data);
 
                 if(callback != undefined) {
                     callback(baby);
                 }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                BabyTracker.handleError(jqXHR, textStatus, errorThrown, errorCallback);
             }
         });
     },
