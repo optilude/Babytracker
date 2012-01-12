@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Babytracker</title>
+    <link rel="stylesheet"  href="../jquery.mobile-1.0/jquery.mobile-1.0.min.css" />
+    <script src="../jquery-1.6.4.min.js"></script>
+    <script src="../jquery.mobile-1.0/jquery.mobile-1.0.min.js"></script>
+    <script src="../client.js"></script>
+    <script src="mobile.js"></script>
+</head>
+<body>
+
+<!-- Entry list -->
+<div id="login-page" data-role="page" class="type-login">
+
+    <div data-role="header">
+        <h1>Babytracker</h1>
+    </div><!-- /header -->
+
+    <div data-role="content">
+        <h2>Welcome</h2>
+        <p>
+            Please log in. If you do not have an account,
+            please <a href="http://babytracker.herokuapp.com/@@signup">create one</a>
+            before returning to the application.
+        </p>
+
+        <form id="login-form" action="#" method="post">
+            <fieldset>
+
+                <div data-role="fieldcontain">
+                    <label for="username">Username:</label>
+                    <input type="text" name="username" id="username" value="" />
+                </div>
+
+                <div data-role="fieldcontain">
+                    <label for="password">Password:</label>
+                    <input type="password" name="password" id="password" value="" />
+                </div>
+
+            </fieldset>
+
+            <button type="submit" name="login" value="Login" data-theme="a">Log in</button>
+        </form>
+
+        <a href="#home-page">debug</a>
+
+    </div>
+
+</div>
+
+<!-- New entry -->
+<div id="home-page" data-role="page" class="type-home">
+
+    <div data-role="header">
+        <a href="#home-page" data-icon="home">Home</a>
+        <h1>Home</h1>
+        <a href="#login-page" data-icon="minus">Log out</a>
+    </div><!-- /header -->
+
+    <div data-role="content">
+
+        <h2>Welcome</h2>
+
+        <p>
+            Logged in as <span class="logged-in-username">John Smith</span>
+        </p>
+
+        <ul data-role="listview" data-theme="g">
+            <li><a href="acura.html">Acura</a></li>
+            <li><a href="audi.html">Audi</a></li>
+            <li><a href="bmw.html">BMW</a></li>
+        </ul>
+
+    </div>
+
+</div>
+
+</body>
+</html>

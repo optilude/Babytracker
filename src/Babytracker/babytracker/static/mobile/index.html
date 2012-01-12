@@ -5,17 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Babytracker</title>
     <link rel="stylesheet"  href="../jquery.mobile-1.0/jquery.mobile-1.0.min.css" />
+    <link rel="stylesheet"  href="mobile.css" />
     <script src="../jquery-1.6.4.min.js"></script>
     <script src="../jquery.mobile-1.0/jquery.mobile-1.0.min.js"></script>
-    <script src="../clientjs"></script>
-</head> 
+    <script src="../client.js"></script>
+    <script src="mobile.js"></script>
+
+<script type="text/javascript">
+
+!function($) {
+
+    $("#login-page").live('pageinit', function(event) {
+
+        // TODO: Move to global - we need this on every page laod
+
+        // Do we have a valid user?
+        if(localStorage.user) {
+            if(localStorage.user.constructor != BabyTracker.User) {
+                delete localStorage.user;
+            }
+        }
+
+        // ... if so, update and go to home page immediately
+        if(localStorage.user) {
+            localStorage.user.update(function(user) {
+                localStorage.user = user;
+                $.mobile.changePage('home.html', {
+                    transition: 'none'
+                });
+            }, function(status, error) {
+                delete localStorag.user;
+            });
+        }
+
+        $("#login-form").submit(function(event) {
+            event.preventDefault();
+
+            var username = $("#login-form input[name=username]").val();
+            var password = $("#login-form input[name=password]").val();
+
+            $.mobile.showPageLoadingMsg();
+            babyTracker.login(username, password, function(user) {
+                localStorage.user = user;
+                $.mobile.changePage('home.html', {
+                    transition: 'none'
+                });
+            }, function(status, error) {
+                $("#error-message-details").html(error.error);
+                $.mobile.changePage('#error-dialog', {
+                    transition: 'pop',
+                    role: 'dialog'
+                });
+            });
+
+            return false;
+        });
+    });
+
+}(jQuery);
+
+</script>
+
+</head>
 <body>
 
 <!-- Login page -->
-<div id="login-page" data-role="page" class="type-login">
-    
-    <div data-role="header">
+<div id="login-page" data-role="page">
+
+    <div data-role="header" data-position="fixed">
+        <a href="home.html" data-icon="home">Home</a>
         <h1>Babytracker</h1>
+        <a href="index.html" data-icon="exit">Log out</a>
     </div><!-- /header -->
 
     <div data-role="content">
@@ -38,43 +98,27 @@
                     <label for="password">Password:</label>
                     <input type="password" name="password" id="password" value="" />
                 </div>
-            
+
             </fieldset>
 
-            <button type="submit" name="login" value="Login" data-theme="a">Log in</button>
+            <button type="submit" name="login" value="Login" data-theme="b">Log in</button>
         </form>
 
-        <a href="#home-page">debug</a>
-        
     </div>
-    
 </div>
 
-<!-- Home page -->
-<div id="home-page" data-role="page" class="type-home">
-    
-    <div data-role="header">
-        <a href="#home-page" data-icon="home">Home</a>
-        <h1>Home</h1>
-        <a href="#login-page" data-icon="minus">Log out</a>
+<!-- Error dialog -->
+<div id="error-dialog" data-role="page">
+
+    <div data-role="header" data-theme="d">
+        <h1>Error</h1>
     </div><!-- /header -->
 
-    <div data-role="content">
-
-        <h2>Welcome</h2>
-
-        <p>
-            Logged in as <span class="logged-in-username">John Smith</span>
-        </p>
-
-        <ul data-role="listview" data-theme="g">
-            <li><a href="acura.html">Acura</a></li>
-            <li><a href="audi.html">Audi</a></li>
-            <li><a href="bmw.html">BMW</a></li>
-        </ul>
-        
+    <div data-role="content" data-theme="c">
+        <h1 id="error-message-title">Login error</h1>
+        <p id="error-message-details">Unable to log in</p>
+        <a href="#login-page" data-role="button" data-rel="back" data-theme="b">Close</a>
     </div>
-    
 </div>
 
 </body>

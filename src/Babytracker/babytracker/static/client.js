@@ -29,12 +29,13 @@ BabyTracker._entryTypeMap = {}; // poplated below
  */
 BabyTracker.handleError = function(jqXHR, textStatus, errorThrown, errorCallback) {
     if(errorCallback != undefined) {
-        var contentType = jqXHR.getResponseHeader('Content-Type');
-        if(contentType && contentType.indexOf('application/json') == 0) {
-            errorCallback(jqXHR.status, jQuery.parseJSON(jqXHR.responseText));    
-        } else {
-            errorCallback(jqXHR.status, {'error': jqXHR.responseText});
+        var error = null;
+        try {
+            error = jQuery.parseJSON(jqXHR.responseText);
+        } catch(e) {
+            error = {error: jqXHR.responseText};
         }
+        errorCallback(jqXHR.status, error);
     }
 };
 
@@ -88,7 +89,7 @@ BabyTracker.prototype = {
             },
             async: false,
             success: function(data, textStatus, jqXHR) {
-                user = new BabyTracker.User(data);
+                var user = new BabyTracker.User(data);
                 self.user = user;
                 if(callback != undefined) {
                     callback(user);
@@ -231,7 +232,7 @@ BabyTracker.User.prototype = {
             },
             crossDomain: true,
             success: function(data, textStatus, jqXHR) {
-                baby = BabyTracker.Baby(data);
+                var baby = BabyTracker.Baby(data);
                 self.babies.push(baby)
 
                 if(callback != undefined) {
@@ -405,7 +406,7 @@ BabyTracker.Baby.prototype = {
             },
             crossDomain: true,
             success: function(data, textStatus, jqXHR) {
-                entry = BabyTracker._createEntry(data);
+                var entry = BabyTracker._createEntry(data);
 
                 if(callback != undefined) {
                     callback(self, entry);

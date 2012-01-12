@@ -62,7 +62,7 @@ class RootAPI(object):
             'login_url': prefix + '@@login',
             'logout_url': prefix + '@@logout',
         }
-    
+
     @view_config(name='login', request_method='OPTIONS')
     def login_options(self):
         self.request.response.headers['Access-Control-Allow-Methods'] = 'POST'
