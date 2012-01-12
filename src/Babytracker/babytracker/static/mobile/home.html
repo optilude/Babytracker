@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Babytracker</title>
     <link rel="stylesheet"  href="../jquery.mobile-1.0/jquery.mobile-1.0.min.css" />
+    <link rel="stylesheet"  href="mobile.css" />
     <script src="../jquery-1.6.4.min.js"></script>
     <script src="../jquery.mobile-1.0/jquery.mobile-1.0.min.js"></script>
     <script src="../client.js"></script>
@@ -13,27 +14,30 @@
 <body>
 
 <!-- Home page -->
-<div id="home-page" data-role="page" class="type-home">
+<div id="home-page" data-role="page">
 
-    <div data-role="header" data-position="fixed">
-        <a href="#home-page" data-icon="home">Home</a>
-        <h1>Home</h1>
-        <a href="index.html" data-icon="exit">Log out</a>
+    <div data-role="header" data-position="fixed" data-theme="b">
+        <h1>Babytracker</h1>
     </div><!-- /header -->
 
     <div data-role="content">
 
-        <h2>Welcome</h2>
+        <h2>Welcome, <span id="name">John Smith</span></h2>
 
         <p>
-            Logged in as <span class="logged-in-username">John Smith</span>
+            Choose an action below
         </p>
 
-        <ul data-role="listview" data-theme="g">
-            <li><a href="acura.html">Acura</a></li>
-            <li><a href="audi.html">Audi</a></li>
-            <li><a href="bmw.html">BMW</a></li>
-        </ul>
+        <a data-role="button" data-icon="plus" href="newentry.html">New entry</a>
+        <a data-role="button" data-icon="info" href="entries.html">History</a>
+        <a data-role="button" data-icon="gear" href="settings.html">Settings</a>
+        <a data-role="button" data-icon="delete" href="index.html">Logout</a>
+
+        <p>
+            For more detailed analysis and management,
+            log into the
+            <a href="http://babytracker.herokuapp.com" target="_blank">desktop application</a>.
+        </p>
 
     </div>
 

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Babytracker</title>
+    <link rel="stylesheet"  href="../jquery.mobile-1.0/jquery.mobile-1.0.min.css" />
+    <link rel="stylesheet"  href="mobile.css" />
+    <script src="../jquery-1.6.4.min.js"></script>
+    <script src="../jquery.mobile-1.0/jquery.mobile-1.0.min.js"></script>
+    <script src="../client.js"></script>
+    <script src="mobile.js"></script>
+</head>
+<body>
+
+<!-- Login page -->
+<div id="login-page" data-role="page">
+
+    <div data-role="header" data-position="fixed" data-theme="b">
+        <a href="home.html" data-icon="delete">Cancel</a>
+        <h1>New entry</h1>
+        <a href="home.html" data-icon="check">Save</a>
+    </div><!-- /header -->
+
+    <div data-role="content">
+        
+        <form id="new-entry-form" action="#" method="post">
+            
+            <fieldset data-role="controlgroup" data-type="horizontal">
+                <input type="radio" name="entry_type" value="breast_feed" id="entry_type-breast_feed">
+                <label for="entry_type-breast_feed">Breast</label>
+                <input type="radio" name="entry_type" value="bottle_feed" id="entry_type-bottle_feed">
+                <label for="entry_type-bottle_feed">Bottle</label>
+                <input checked="checked" type="radio" name="entry_type" value="mixed_feed" id="entry_type-mixed_feed">
+                <label for="entry_type-mixed_feed">Mixed</label>
+                <input type="radio" name="entry_type" value="sleep" id="entry_type-sleep">
+                <label for="entry_type-sleep">Sleep</label>
+                <input type="radio" name="entry_type" value="nappy_change" id="entry_type-nappy_change">
+                <label for="entry_type-nappy_change">Nappy</label>
+            </fieldset>
+
+            <div data-role="fieldcontain">
+                <fieldset data-role="controlgroup" data-type="horizontal">
+                    <legend>Date</legend>
+
+                        <label for="select-choice-day">Day</label>
+                        <select name="select-choice-day" id="select-choice-day">
+                            <option>Day</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                            <option value="7">7</option>
+                        </select>
+
+                        <label for="select-choice-month">Month</label>
+                        <select name="select-choice-month" id="select-choice-month">
+                            <option>Month</option>
+                            <option value="1">Jan</option>
+                            <option value="2">Feb</option>
+                            <option value="3">Mar</option>
+                            <option value="4">Apr</option>
+                            <option value="5">May</option>
+                            <option value="6">Jun</option>
+                            <option value="7">Jul</option>
+                            <option value="8">Aug</option>
+                            <option value="9">Sep</option>
+                            <option value="10">Oct</option>
+                            <option value="11">Nov</option>
+                            <option value="12">Dec</option>
+                        </select>
+
+                        <label for="select-choice-year">Year</label>
+                        <select name="select-choice-year" id="select-choice-year">
+                            <option>Year</option>
+                            <option value="2012">2011</option>
+                            <option value="2011">2011</option>
+                        </select>
+                </fieldset>
+            </div>
+
+            <div data-role="fieldcontain">
+                <fieldset data-role="controlgroup" data-type="horizontal">
+                    <legend>Start:</legend>
+
+                        <label for="select-choice-start-hour">Hour</label>
+                        <select name="select-choice-start-hour" id="select-choice-start-hour">
+                            <option value="00">00</option>
+                            <option value="01">01</option>
+                            <option value="02">02</option>
+                            <option value="03">03</option>
+                            <option value="04">04</option>
+                            <option value="05">05</option>
+                            <option value="06">06</option>
+                            <option value="07">07</option>
+                            <option value="08">08</option>
+                            <option value="09">09</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
+                            <option value="18">18</option>
+                            <option value="19">19</option>
+                            <option value="20">20</option>
+                            <option value="21">21</option>
+                            <option value="22">22</option>
+                            <option value="23">23</option>
+                        </select>
+
+                        <label for="select-choice-start-minute">Minute</label>
+                        <select name="select-choice-start-minute" id="select-choice-start-minute">
+                            <option value="00">00</option>
+                            <option value="01">01</option>
+                            <option value="02">02</option>
+                            <option value="03">03</option>
+                            <option value="04">04</option>
+                            <option value="05">05</option>
+                            <option value="06">06</option>
+                            <option value="07">07</option>
+                            <option value="08">08</option>
+                            <option value="09">09</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
+                            <option value="18">18</option>
+                            <option value="19">19</option>
+                            <option value="20">20</option>
+                            <option value="21">21</option>
+                            <option value="22">22</option>
+                            <option value="23">23</option>
+                            <option value="24">24</option>
+                            <option value="25">25</option>
+                            <option value="26">26</option>
+                            <option value="27">27</option>
+                            <option value="28">28</option>
+                            <option value="29">29</option>
+                            <option value="30">30</option>
+                            <option value="31">31</option>
+                            <option value="32">32</option>
+                            <option value="33">33</option>
+                            <option value="34">34</option>
+                            <option value="35">35</option>
+                            <option value="36">36</option>
+                            <option value="37">37</option>
+                            <option value="38">38</option>
+                            <option value="39">39</option>
+                            <option value="40">40</option>
+                            <option value="41">41</option>
+                            <option value="42">42</option>
+                            <option value="43">43</option>
+                            <option value="44">44</option>
+                            <option value="45">45</option>
+                            <option value="46">46</option>
+                            <option value="47">47</option>
+                            <option value="48">48</option>
+                            <option value="49">49</option>
+                            <option value="50">50</option>
+                            <option value="51">51</option>
+                            <option value="52">52</option>
+                            <option value="53">53</option>
+                            <option value="54">54</option>
+                            <option value="55">55</option>
+                            <option value="56">56</option>
+                            <option value="57">57</option>
+                            <option value="58">58</option>
+                            <option value="59">59</option>
+                        </select>
+
+                </fieldset>
+            </div>
+
+            <h3>Jill</h3>
+
+
+            <div data-role="fieldcontain" data-entry-type="mixed_feed breast_feed">
+                <label for="left_duration">Left breat:</label>
+                <input name="left_duration" id="left_duration" type="number" class="narrow" />
+            </div>
+
+            <div data-role="fieldcontain" data-entry-type="mixed_feed breast_feed">
+                <label for="right_duration">Right breat:</label>
+                <input name="right_duration" id="right_duration" type="number" class="narrow" />
+            </div>
+
+            <div data-role="fieldcontain" data-entry-type="mibxed_feed">
+                <label for="topup">Topup:</label>
+                <input name="topup" id="topup" type="number" class="narrow" />
+            </div>
+
+            <div data-role="fieldcontain" data-entry-type="bottle_feed">
+                <label for="amount">Amount:</label>
+                <input name="amount" id="amount" type="number" class="narrow" />
+            </div>
+
+            <div data-role="fieldcontain" data-entry-type="sleep">
+                <label for="duration">Duration:</label>
+                <input name="duration" id="duration" type="number" class="narrow" />
+            </div>
+
+            <div data-role="fieldcontain" data-entry-type="nappy_change">
+                <label for="contents">Contents:</label>
+                <select name="contents" id="contents">
+                    <option value="none">None</option>
+                    <option value="wet">Wet</option>
+                    <option value="dirty">Dirty</option>
+                </select>
+            </div>
+
+
+            <div data-role="fieldcontain">
+                <label for="note">Note:</label>
+                <input name="note" id="note" type="text" />
+            </div>
+
+            <div data-role="fieldcontain">
+                <fieldset data-role="controlgroup" data-type="horizontal">
+                    <legend>End:</legend>
+
+                        <label for="select-choice-end-hour">Hour</label>
+                        <select name="select-choice-end-hour" id="select-choice-end-hour">
+                            <option>-</option>
+                            <option value="00">00</option>
+                            <option value="01">01</option>
+                            <option value="02">02</option>
+                            <option value="03">03</option>
+                            <option value="04">04</option>
+                            <option value="05">05</option>
+                            <option value="06">06</option>
+                            <option value="07">07</option>
+                            <option value="08">08</option>
+                            <option value="09">09</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
+                            <option value="18">18</option>
+                            <option value="19">19</option>
+                            <option value="20">20</option>
+                            <option value="21">21</option>
+                            <option value="22">22</option>
+                            <option value="23">23</option>
+                        </select>
+
+                        <label for="select-choice-end-minute">Minute</label>
+                        <select name="select-choice-end-minute" id="select-choice-end-minute">
+                            <option>-</option>
+                            <option value="00">00</option>
+                            <option value="01">01</option>
+                            <option value="02">02</option>
+                            <option value="03">03</option>
+                            <option value="04">04</option>
+                            <option value="05">05</option>
+                            <option value="06">06</option>
+                            <option value="07">07</option>
+                            <option value="08">08</option>
+                            <option value="09">09</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
+                            <option value="18">18</option>
+                            <option value="19">19</option>
+                            <option value="20">20</option>
+                            <option value="21">21</option>
+                            <option value="22">22</option>
+                            <option value="23">23</option>
+                            <option value="24">24</option>
+                            <option value="25">25</option>
+                            <option value="26">26</option>
+                            <option value="27">27</option>
+                            <option value="28">28</option>
+                            <option value="29">29</option>
+                            <option value="30">30</option>
+                            <option value="31">31</option>
+                            <option value="32">32</option>
+                            <option value="33">33</option>
+                            <option value="34">34</option>
+                            <option value="35">35</option>
+                            <option value="36">36</option>
+                            <option value="37">37</option>
+                            <option value="38">38</option>
+                            <option value="39">39</option>
+                            <option value="40">40</option>
+                            <option value="41">41</option>
+                            <option value="42">42</option>
+                            <option value="43">43</option>
+                            <option value="44">44</option>
+                            <option value="45">45</option>
+                            <option value="46">46</option>
+                            <option value="47">47</option>
+                            <option value="48">48</option>
+                            <option value="49">49</option>
+                            <option value="50">50</option>
+                            <option value="51">51</option>
+                            <option value="52">52</option>
+                            <option value="53">53</option>
+                            <option value="54">54</option>
+                            <option value="55">55</option>
+                            <option value="56">56</option>
+                            <option value="57">57</option>
+                            <option value="58">58</option>
+                            <option value="59">59</option>
+                        </select>
+
+                </fieldset>
+            </div>
+
+            <h3>Bill</h3>
+
+
+            <div data-role="fieldcontain" data-entry-type="mixed_feed breast_feed">
+                <label for="left_duration">Left breat:</label>
+                <input name="left_duration" id="left_duration" type="number" class="narrow" />
+            </div>
+
+            <div data-role="fieldcontain" data-entry-type="mixed_feed breast_feed">
+                <label for="right_duration">Right breat:</label>
+                <input name="right_duration" id="right_duration" type="number" class="narrow" />
+            </div>
+
+            <div data-role="fieldcontain" data-entry-type="mibxed_feed">
+                <label for="topup">Topup:</label>
+                <input name="topup" id="topup" type="number" class="narrow" />
+            </div>
+
+            <div data-role="fieldcontain" data-entry-type="bottle_feed">
+                <label for="amount">Amount:</label>
+                <input name="amount" id="amount" type="number" class="narrow" />
+            </div>
+
+            <div data-role="fieldcontain" data-entry-type="sleep">
+                <label for="duration">Duration:</label>
+                <input name="duration" id="duration" type="number" class="narrow" />
+            </div>
+
+            <div data-role="fieldcontain" data-entry-type="nappy_change">
+                <label for="contents">Contents:</label>
+                <select name="contents" id="contents">
+                    <option value="none">None</option>
+                    <option value="wet">Wet</option>
+                    <option value="dirty">Dirty</option>
+                </select>
+            </div>
+
+
+            <div data-role="fieldcontain">
+                <label for="note">Note:</label>
+                <input name="note" id="note" type="text" />
+            </div>
+
+            <div data-role="fieldcontain">
+                <fieldset data-role="controlgroup" data-type="horizontal">
+                    <legend>End:</legend>
+
+                        <label for="select-choice-end-hour">Hour</label>
+                        <select name="select-choice-end-hour" id="select-choice-end-hour">
+                            <option>-</option>
+                            <option value="00">00</option>
+                            <option value="01">01</option>
+                            <option value="02">02</option>
+                            <option value="03">03</option>
+                            <option value="04">04</option>
+                            <option value="05">05</option>
+                            <option value="06">06</option>
+                            <option value="07">07</option>
+                            <option value="08">08</option>
+                            <option value="09">09</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
+                            <option value="18">18</option>
+                            <option value="19">19</option>
+                            <option value="20">20</option>
+                            <option value="21">21</option>
+                            <option value="22">22</option>
+                            <option value="23">23</option>
+                        </select>
+
+                        <label for="select-choice-end-minute">Minute</label>
+                        <select name="select-choice-end-minute" id="select-choice-end-minute">
+                            <option>-</option>
+                            <option value="00">00</option>
+                            <option value="01">01</option>
+                            <option value="02">02</option>
+                            <option value="03">03</option>
+                            <option value="04">04</option>
+                            <option value="05">05</option>
+                            <option value="06">06</option>
+                            <option value="07">07</option>
+                            <option value="08">08</option>
+                            <option value="09">09</option>
+                            <option value="10">10</option>
+                            <option value="11">11</option>
+                            <option value="12">12</option>
+                            <option value="13">13</option>
+                            <option value="14">14</option>
+                            <option value="15">15</option>
+                            <option value="16">16</option>
+                            <option value="17">17</option>
+                            <option value="18">18</option>
+                            <option value="19">19</option>
+                            <option value="20">20</option>
+                            <option value="21">21</option>
+                            <option value="22">22</option>
+                            <option value="23">23</option>
+                            <option value="24">24</option>
+                            <option value="25">25</option>
+                            <option value="26">26</option>
+                            <option value="27">27</option>
+                            <option value="28">28</option>
+                            <option value="29">29</option>
+                            <option value="30">30</option>
+                            <option value="31">31</option>
+                            <option value="32">32</option>
+                            <option value="33">33</option>
+                            <option value="34">34</option>
+                            <option value="35">35</option>
+                            <option value="36">36</option>
+                            <option value="37">37</option>
+                            <option value="38">38</option>
+                            <option value="39">39</option>
+                            <option value="40">40</option>
+                            <option value="41">41</option>
+                            <option value="42">42</option>
+                            <option value="43">43</option>
+                            <option value="44">44</option>
+                            <option value="45">45</option>
+                            <option value="46">46</option>
+                            <option value="47">47</option>
+                            <option value="48">48</option>
+                            <option value="49">49</option>
+                            <option value="50">50</option>
+                            <option value="51">51</option>
+                            <option value="52">52</option>
+                            <option value="53">53</option>
+                            <option value="54">54</option>
+                            <option value="55">55</option>
+                            <option value="56">56</option>
+                            <option value="57">57</option>
+                            <option value="58">58</option>
+                            <option value="59">59</option>
+                        </select>
+
+                </fieldset>
+            </div>
+
+
+        </form>
+
+    </div>
+</div>
+
+<!-- Error dialog -->
+<div id="error-dialog" data-role="page">
+
+    <div data-role="header" data-theme="d">
+        <h1>Error</h1>
+    </div><!-- /header -->
+
+    <div data-role="content" data-theme="c">
+        <h1 id="error-message-title">Login error</h1>
+        <p id="error-message-details">Unable to log in</p>
+        <a href="#login-page" data-role="button" data-rel="back" data-theme="b">Close</a>
+    </div>
+</div>
+
+</body>
+</html>

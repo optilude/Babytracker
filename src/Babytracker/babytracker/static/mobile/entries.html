@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Babytracker</title>
     <link rel="stylesheet"  href="../jquery.mobile-1.0/jquery.mobile-1.0.min.css" />
+    <link rel="stylesheet"  href="mobile.css" />
     <script src="../jquery-1.6.4.min.js"></script>
     <script src="../jquery.mobile-1.0/jquery.mobile-1.0.min.js"></script>
     <script src="../client.js"></script>
@@ -12,66 +13,77 @@
 </head>
 <body>
 
-<!-- Entry list -->
-<div id="login-page" data-role="page" class="type-login">
+<!-- Home page -->
+<div id="entries-page" data-role="page">
 
-    <div data-role="header">
-        <h1>Babytracker</h1>
-    </div><!-- /header -->
-
-    <div data-role="content">
-        <h2>Welcome</h2>
-        <p>
-            Please log in. If you do not have an account,
-            please <a href="http://babytracker.herokuapp.com/@@signup">create one</a>
-            before returning to the application.
-        </p>
-
-        <form id="login-form" action="#" method="post">
-            <fieldset>
-
-                <div data-role="fieldcontain">
-                    <label for="username">Username:</label>
-                    <input type="text" name="username" id="username" value="" />
-                </div>
-
-                <div data-role="fieldcontain">
-                    <label for="password">Password:</label>
-                    <input type="password" name="password" id="password" value="" />
-                </div>
-
-            </fieldset>
-
-            <button type="submit" name="login" value="Login" data-theme="a">Log in</button>
-        </form>
-
-        <a href="#home-page">debug</a>
-
-    </div>
-
-</div>
-
-<!-- New entry -->
-<div id="home-page" data-role="page" class="type-home">
-
-    <div data-role="header">
-        <a href="#home-page" data-icon="home">Home</a>
-        <h1>Home</h1>
-        <a href="#login-page" data-icon="minus">Log out</a>
+    <div data-role="header" data-position="fixed" data-theme="b">
+        <a href="home.html" data-icon="home">Home</a>
+        <h1>History</h1>
+        <a href="#" data-icon="refresh">Refresh</a>
     </div><!-- /header -->
 
     <div data-role="content">
 
-        <h2>Welcome</h2>
+        <h2>Past entries</h2>
 
-        <p>
-            Logged in as <span class="logged-in-username">John Smith</span>
-        </p>
+        <ul data-role="listview" data-filter="true" data-inset="true">
+            <li>
+                <a>
+                    07 Jan 2012
+                </a>
+                <span class="ui-li-count">8</span>
+                <ul data-inset="true">
+                    <li data-icon="arrow-l" data-theme="b"><a href="#" data-rel="back">Back</a></li>
+                    <li>
+                        <a href="#">
+                            <h3>08:00</h3>
+                            <p>Mixed feed</p>
+                        </a>
+                        <ul data-inset="true">
+                            <li data-icon="arrow-l" data-theme="b"><a href="#" data-rel="back">Back</a></li>
 
-        <ul data-role="listview" data-theme="g">
-            <li><a href="acura.html">Acura</a></li>
-            <li><a href="audi.html">Audi</a></li>
-            <li><a href="bmw.html">BMW</a></li>
+                            <li>
+                                <h4>Jill</h4>
+                                <p class="ui-li-aside">
+                                    <strong>20</strong> min <strong>left</strong> breast
+                                    <br/>
+                                    <strong>40ml</strong> top-up.
+                                </p>
+                                <p>
+                                    Finished <strong>08:45</strong>.
+                                </p>
+                                <p>
+                                    <em>Quite sleepy.</em>
+                                </p>
+                            </li>
+
+                            <li>
+                                <h4>Bill</h4>
+                                 <p class="ui-li-aside">
+                                    <strong>25</strong> min <strong>right</strong> breast
+                                    <br/>
+                                    <strong>45ml</strong> top-up.
+                                </p>
+                            </li>
+
+                            <li data-icon="arrow-r" data-theme="a"><a href="#">Edit</a></li>
+                            <li data-icon="delete" data-theme="a"><a href="#">Delete</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#">
+                            <h3>09:00</h3>
+                            <p>Sleep</p>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a>
+                    06 Jan 2012
+                    <span class="ui-li-count">12</span>
+                </a>
+            </li>
         </ul>
 
     </div>

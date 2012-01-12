@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Babytracker</title>
+    <link rel="stylesheet"  href="../jquery.mobile-1.0/jquery.mobile-1.0.min.css" />
+    <link rel="stylesheet"  href="mobile.css" />
+    <script src="../jquery-1.6.4.min.js"></script>
+    <script src="../jquery.mobile-1.0/jquery.mobile-1.0.min.js"></script>
+    <script src="../client.js"></script>
+    <script src="mobile.js"></script>
+</head>
+<body>
+
+<!-- Login page -->
+<div id="login-page" data-role="page">
+
+    <div data-role="header" data-position="fixed" data-theme="b">
+        <a href="home.html" data-icon="delete">Cancel</a>
+        <h1>Settings</h1>
+        <a href="home.html" data-icon="check">Save</a>
+    </div><!-- /header -->
+
+    <div data-role="content">
+        
+        <form id="settings-form" action="#" method="post">
+            
+            <h3>History</h3>
+            
+            <div data-role="fieldcontain">
+                <p>Number of days to show in the history list.</p>
+                <input type="number" name="days" id="settings-days" value="14" class="narrow" />
+            </div>
+
+            <h3>Default entry type</h3>
+            
+            <div data-role="fieldcontain">
+                
+            </div>
+
+            <h3>Babies to show</h3>
+            <p>
+                Select the babies to show when creating new
+                entries.
+            </p>
+            <div data-role="fieldcontain">
+                <fieldset data-role="controlgroup">
+                   <input type="checkbox" name="baby" id="settings-baby-1" checked="checked" />
+                   <label for="settings-baby-1">Jill</label>
+                   <input type="checkbox" name="baby" id="settings-baby-2" checked="checked" />
+                   <label for="settings-baby-2">Bill</label>
+                </fieldset>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<!-- Error dialog -->
+<div id="error-dialog" data-role="page">
+
+    <div data-role="header" data-theme="d">
+        <h1>Error</h1>
+    </div><!-- /header -->
+
+    <div data-role="content" data-theme="c">
+        <h1 id="error-message-title">Login error</h1>
+        <p id="error-message-details">Unable to log in</p>
+        <a href="#login-page" data-role="button" data-rel="back" data-theme="b">Close</a>
+    </div>
+</div>
+
+</body>
+</html>

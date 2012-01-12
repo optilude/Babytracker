@@ -10,72 +10,14 @@
     <script src="../jquery.mobile-1.0/jquery.mobile-1.0.min.js"></script>
     <script src="../client.js"></script>
     <script src="mobile.js"></script>
-
-<script type="text/javascript">
-
-!function($) {
-
-    $("#login-page").live('pageinit', function(event) {
-
-        // TODO: Move to global - we need this on every page laod
-
-        // Do we have a valid user?
-        if(localStorage.user) {
-            if(localStorage.user.constructor != BabyTracker.User) {
-                delete localStorage.user;
-            }
-        }
-
-        // ... if so, update and go to home page immediately
-        if(localStorage.user) {
-            localStorage.user.update(function(user) {
-                localStorage.user = user;
-                $.mobile.changePage('home.html', {
-                    transition: 'none'
-                });
-            }, function(status, error) {
-                delete localStorag.user;
-            });
-        }
-
-        $("#login-form").submit(function(event) {
-            event.preventDefault();
-
-            var username = $("#login-form input[name=username]").val();
-            var password = $("#login-form input[name=password]").val();
-
-            $.mobile.showPageLoadingMsg();
-            babyTracker.login(username, password, function(user) {
-                localStorage.user = user;
-                $.mobile.changePage('home.html', {
-                    transition: 'none'
-                });
-            }, function(status, error) {
-                $("#error-message-details").html(error.error);
-                $.mobile.changePage('#error-dialog', {
-                    transition: 'pop',
-                    role: 'dialog'
-                });
-            });
-
-            return false;
-        });
-    });
-
-}(jQuery);
-
-</script>
-
 </head>
 <body>
 
 <!-- Login page -->
 <div id="login-page" data-role="page">
 
-    <div data-role="header" data-position="fixed">
-        <a href="home.html" data-icon="home">Home</a>
+    <div data-role="header" data-position="fixed" data-theme="b">
         <h1>Babytracker</h1>
-        <a href="index.html" data-icon="exit">Log out</a>
     </div><!-- /header -->
 
     <div data-role="content">
@@ -86,7 +28,7 @@
             before returning to the application.
         </p>
 
-        <form id="login-form" action="#" method="post">
+        <form id="login-form" action="home.html" method="post">
             <fieldset>
 
                 <div data-role="fieldcontain">
