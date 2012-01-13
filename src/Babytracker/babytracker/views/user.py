@@ -66,6 +66,30 @@ class UserViews(object):
                 session.add(baby)
                 self.request.session.flash(u"Baby added", queue="success")
 
+        if 'btn.delete_baby' in post:
+            baby_name = post.get('baby_name')
+
+            if not baby_name:
+                self.request.session.flash(u"Missing baby name - this should not happen", queue='error')
+
+            else:
+                baby = None
+                for b in user.babies:
+                    if b.__name__ == baby_name:
+                        baby = b
+                        break
+
+                if baby is None:
+                    self.request.session.flash(u"Baby not found. It may have been deleted already.", queue='error')
+                else:
+                    session = models.DBSession()
+                    session.delete(baby)
+                    session.flush()
+
+                    session.refresh(user);
+
+                    self.request.session.flash(u"Baby deleted", queue="success")
+
         return {
             'errors': errors,
         }
