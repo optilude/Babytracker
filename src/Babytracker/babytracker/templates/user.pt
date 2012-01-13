@@ -127,7 +127,7 @@ jQuery(function($) {
       </table>
 
       <div id="add-baby-panel">
-        <a class="btn info" data-controls-modal="add-baby" data-backdrop="static" data-keyboard="true">Add baby</a>
+        <a class="btn success" data-controls-modal="add-baby" data-backdrop="static" data-keyboard="true">Add baby</a>
       </div>
 
     </div>
