@@ -13,31 +13,40 @@
 </head>
 <body>
 
-<!-- Login page -->
-<div id="login-page" data-role="page">
+<!-- Settings page -->
+<div id="settings-page" data-role="page" class="logged-in-page">
 
     <div data-role="header" data-position="fixed" data-theme="b">
         <a href="home.html" data-icon="delete">Cancel</a>
         <h1>Settings</h1>
-        <a href="home.html" data-icon="check">Save</a>
+        <a id="settings-save" href="home.html" data-icon="check">Save</a>
     </div><!-- /header -->
 
     <div data-role="content">
-        
+
         <form id="settings-form" action="#" method="post">
-            
+
             <h3>History</h3>
-            
+
             <div data-role="fieldcontain">
                 <p>Number of days to show in the history list.</p>
-                <input type="number" name="days" id="settings-days" value="14" class="narrow" />
+                <input type="number" name="daysOfHistory" id="settings-days" value="10" class="narrow" />
             </div>
 
             <h3>Default entry type</h3>
-            
-            <div data-role="fieldcontain">
-                
-            </div>
+
+            <fieldset data-role="controlgroup">
+                <input type="radio" name="entry_type" value="breast_feed" id="entry_type-breast_feed">
+                <label for="entry_type-breast_feed">Breast feed</label>
+                <input type="radio" name="entry_type" value="bottle_feed" id="entry_type-bottle_feed">
+                <label for="entry_type-bottle_feed">Bottle feed</label>
+                <input type="radio" name="entry_type" value="mixed_feed" id="entry_type-mixed_feed">
+                <label for="entry_type-mixed_feed">Mixed feed</label>
+                <input type="radio" name="entry_type" value="sleep" id="entry_type-sleep">
+                <label for="entry_type-sleep">Sleep</label>
+                <input type="radio" name="entry_type" value="nappy_change" id="entry_type-nappy_change">
+                <label for="entry_type-nappy_change">Nappy change</label>
+            </fieldset>
 
             <h3>Babies to show</h3>
             <p>
@@ -45,29 +54,12 @@
                 entries.
             </p>
             <div data-role="fieldcontain">
-                <fieldset data-role="controlgroup">
-                   <input type="checkbox" name="baby" id="settings-baby-1" checked="checked" />
-                   <label for="settings-baby-1">Jill</label>
-                   <input type="checkbox" name="baby" id="settings-baby-2" checked="checked" />
-                   <label for="settings-baby-2">Bill</label>
+                <fieldset data-role="controlgroup" id="active-babies-list">
+                    <!-- Baby names injecte here -->
                 </fieldset>
             </div>
         </form>
 
-    </div>
-</div>
-
-<!-- Error dialog -->
-<div id="error-dialog" data-role="page">
-
-    <div data-role="header" data-theme="d">
-        <h1>Error</h1>
-    </div><!-- /header -->
-
-    <div data-role="content" data-theme="c">
-        <h1 id="error-message-title">Login error</h1>
-        <p id="error-message-details">Unable to log in</p>
-        <a href="#login-page" data-role="button" data-rel="back" data-theme="b">Close</a>
     </div>
 </div>
 

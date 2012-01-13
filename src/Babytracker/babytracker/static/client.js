@@ -31,7 +31,7 @@ BabyTracker.handleError = function(jqXHR, textStatus, errorThrown, errorCallback
     if(errorCallback != undefined) {
         var error = null;
         try {
-            error = jQuery.parseJSON(jqXHR.responseText);
+            error = JSON.parse(jqXHR.responseText);
         } catch(e) {
             error = {error: jqXHR.responseText};
         }
@@ -51,6 +51,7 @@ BabyTracker.prototype = {
             type: 'GET',
             url: self.url,
             dataType: 'json',
+            async: false,
             success: function(data, textStatus, jqXHR) {
                 self.login_url = data['login_url'];
                 self.logout_url = data['logout_url'];
@@ -157,8 +158,10 @@ BabyTracker.User.prototype = {
      * Error callback is called in case of a failure with the HTTP
      * response code and the error information returned by the server.
      */
-    update: function(callback, errorCallback) {
+    update: function(callback, errorCallback, async) {
         var self = this;
+        if(async == undefined) async = true;
+
         jQuery.ajax({
             type: 'GET',
             url: self.url,
@@ -167,6 +170,7 @@ BabyTracker.User.prototype = {
                 withCredentials: true
             },
             crossDomain: true,
+            async: async,
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
 
@@ -186,8 +190,9 @@ BabyTracker.User.prototype = {
      * Error callback is called in case of a failure with the HTTP
      * response code and the error information returned by the server.
      */
-    save: function(callback, errorCallback) {
+    save: function(callback, errorCallback, async) {
         var self = this;
+        if(async == undefined) async = true;
         jQuery.ajax({
             type: 'PUT',
             url: self.url,
@@ -199,6 +204,7 @@ BabyTracker.User.prototype = {
                 withCredentials: true
             },
             crossDomain: true,
+            async: async,
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
 
@@ -218,8 +224,9 @@ BabyTracker.User.prototype = {
      * Error callback is called in case of a failure with the HTTP
      * response code and the error information returned by the server.
      */
-    addBaby: function(baby, callback, errorCallback) {
+    addBaby: function(baby, callback, errorCallback, async) {
         var self = this;
+        if(async == undefined) async = true;
         jQuery.ajax({
             type: 'POST',
             url: self.url,
@@ -231,6 +238,7 @@ BabyTracker.User.prototype = {
                 withCredentials: true
             },
             crossDomain: true,
+            async: async,
             success: function(data, textStatus, jqXHR) {
                 var baby = BabyTracker.Baby(data);
                 self.babies.push(baby)
@@ -261,8 +269,9 @@ BabyTracker.Baby.prototype = {
      * Error callback is called in case of a failure with the HTTP
      * response code and the error information returned by the server.
      */
-    update: function(callback, errorCallback) {
+    update: function(callback, errorCallback, async) {
         var self = this;
+        if(async == undefined) async = true;
         jQuery.ajax({
             type: 'GET',
             url: self.url,
@@ -271,6 +280,7 @@ BabyTracker.Baby.prototype = {
                 withCredentials: true
             },
             crossDomain: true,
+            async: async,
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
 
@@ -290,8 +300,9 @@ BabyTracker.Baby.prototype = {
      * Error callback is called in case of a failure with the HTTP
      * response code and the error information returned by the server.
      */
-    save: function(callback, errorCallback) {
+    save: function(callback, errorCallback, async) {
         var self = this;
+        if(async == undefined) async = true;
         jQuery.ajax({
             type: 'PUT',
             url: self.url,
@@ -303,6 +314,7 @@ BabyTracker.Baby.prototype = {
                 withCredentials: true
             },
             crossDomain: true,
+            async: async,
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
 
@@ -322,8 +334,9 @@ BabyTracker.Baby.prototype = {
      * Error callback is called in case of a failure with the HTTP
      * response code and the error information returned by the server.
      */
-    delete: function(callback, errorCallback) {
+    delete: function(callback, errorCallback, async) {
         var self = this;
+        if(async == undefined) async = true;
         jQuery.ajax({
             type: 'DELETE',
             url: self.url,
@@ -332,6 +345,7 @@ BabyTracker.Baby.prototype = {
                 withCredentials: true
             },
             crossDomain: true,
+            async: async,
             success: function(data, textStatus, jqXHR) {
                 var user = new BabyTracker.User(data);
 
@@ -353,9 +367,10 @@ BabyTracker.Baby.prototype = {
      * Error callback is called in case of a failure with the HTTP
      * response code and the error information returned by the server.
      */
-    getEntries: function(start, end, entry_type, callback, errorCallback) {
+    getEntries: function(start, end, entry_type, callback, errorCallback, async) {
         // TODO: Date conversion?
         var self = this;
+        if(async == undefined) async = true;
         jQuery.ajax({
             type: 'GET',
             url: self.url,
@@ -370,6 +385,7 @@ BabyTracker.Baby.prototype = {
                 withCredentials: true
             },
             crossDomain: true,
+            async: async,
             success: function(data, textStatus, jqXHR) {
                 var arr = [];
                 for(var i = 0; i < data.length; ++i) {
@@ -392,8 +408,9 @@ BabyTracker.Baby.prototype = {
      * Error callback is called in case of a failure with the HTTP
      * response code and the error information returned by the server.
      */
-    addEntry: function(entry, callback, errorCallback) {
+    addEntry: function(entry, callback, errorCallback, async) {
         var self = this;
+        if(async == undefined) async = true;
         jQuery.ajax({
             type: 'POST',
             url: self.url,
@@ -405,6 +422,7 @@ BabyTracker.Baby.prototype = {
                 withCredentials: true
             },
             crossDomain: true,
+            async: async,
             success: function(data, textStatus, jqXHR) {
                 var entry = BabyTracker._createEntry(data);
 
@@ -431,8 +449,9 @@ BabyTracker.Entry.prototype = {
      * Error callback is called in case of a failure with the HTTP
      * response code and the error information returned by the server.
      */
-    update: function(callback, errorCallback) {
+    update: function(callback, errorCallback, async) {
         var self = this;
+        if(async == undefined) async = true;
         jQuery.ajax({
             type: 'GET',
             url: self.url,
@@ -441,6 +460,7 @@ BabyTracker.Entry.prototype = {
                 withCredentials: true
             },
             crossDomain: true,
+            async: async,
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
 
@@ -460,8 +480,9 @@ BabyTracker.Entry.prototype = {
      * Error callback is called in case of a failure with the HTTP
      * response code and the error information returned by the server.
      */
-    save: function() {
+    save: function(callback, errorCallback, async) {
         var self = this;
+        if(async == undefined) async = true;
         jQuery.ajax({
             type: 'PUT',
             url: self.url,
@@ -473,6 +494,7 @@ BabyTracker.Entry.prototype = {
                 withCredentials: true
             },
             crossDomain: true,
+            async: async,
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
 
@@ -492,8 +514,9 @@ BabyTracker.Entry.prototype = {
      * Error callback is called in case of a failure with the HTTP
      * response code and the error information returned by the server.
      */
-    delete: function() {
+    delete: function(callback, errorCallback, async) {
         var self = this;
+        if(async == undefined) async = true;
         jQuery.ajax({
             type: 'DELETE',
             url: self.url,
@@ -502,6 +525,7 @@ BabyTracker.Entry.prototype = {
                 withCredentials: true
             },
             crossDomain: true,
+            async: async,
             success: function(data, textStatus, jqXHR) {
                 var baby = new BabyTracker.Baby(data);
 

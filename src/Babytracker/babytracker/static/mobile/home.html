@@ -14,7 +14,7 @@
 <body>
 
 <!-- Home page -->
-<div id="home-page" data-role="page">
+<div id="home-page" data-role="page" class="logged-in-page">
 
     <div data-role="header" data-position="fixed" data-theme="b">
         <h1>Babytracker</h1>
@@ -22,16 +22,16 @@
 
     <div data-role="content">
 
-        <h2>Welcome, <span id="name">John Smith</span></h2>
+        <h2>Welcome, <span class="user-name"></span></h2>
 
         <p>
-            Choose an action below
+            Choose an action below:
         </p>
 
         <a data-role="button" data-icon="plus" href="newentry.html">New entry</a>
         <a data-role="button" data-icon="info" href="entries.html">History</a>
         <a data-role="button" data-icon="gear" href="settings.html">Settings</a>
-        <a data-role="button" data-icon="delete" href="index.html">Logout</a>
+        <a data-role="button" data-icon="delete" href="#" class="logout-button" >Logout</a>
 
         <p>
             For more detailed analysis and management,

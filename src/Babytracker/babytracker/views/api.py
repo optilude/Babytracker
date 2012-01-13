@@ -5,7 +5,7 @@ from pyramid.view import view_config, view_defaults
 from pyramid.traversal import resource_path
 from pyramid.security import remember, forget
 
-from babytracker.interfaces import VIEW_PERMISSION, EDIT_PERMISSION, SIGNUP_PERMISSION
+from babytracker.interfaces import VIEW_PERMISSION, EDIT_PERMISSION
 from babytracker import models
 
 def api_resource_url(context, request):
@@ -68,7 +68,7 @@ class RootAPI(object):
         self.request.response.headers['Access-Control-Allow-Methods'] = 'POST'
         return None
 
-    @view_config(name='login', request_method='POST', permission=SIGNUP_PERMISSION)
+    @view_config(name='login', request_method='POST')
     def login(self):
         """Log in and retreive basic information about the user
 
@@ -95,7 +95,6 @@ class RootAPI(object):
 
         400 -> No username and/or no password
         401 -> Invalid credentials
-        403 -> Already logged in
         """
 
         try:
@@ -106,10 +105,10 @@ class RootAPI(object):
         if not isinstance(body, dict):
             return error_json(400, "JSON object with 'username' and 'password' expected", self.request)
 
-        username = body.get('username')
-        password = body.get('password')
+        username = body.get('username', None)
+        password = body.get('password', None)
 
-        if not password or not username:
+        if password is None or username is None:
             return error_json(400, "JSON object with 'username' and 'password' expected", self.request)
 
         user = models.User.authenticate(username, password)
