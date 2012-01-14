@@ -173,12 +173,46 @@ jQuery(function($) {
       </form>
     </div>
     <div class="span5">
+      <h3>Adding an entry</h3>
       <p>
         Choose the type of entry to create and fill in the
-        fields that apply. Only the <strong>Start</strong>
+        fields that apply. Only the <em>start</em>
         date and time are required, though you probably want
         to fill in at least a little bit more.
       </p>
+      <h3>Say what?</h3>
+      <p>
+        Babytracker records information about your babies
+        as <em>entries</em>, kind of like entries in a
+        diary of their activities. The entry types are
+        shown below.
+      </p>
+      <dl>
+        <dt>Breast feed</dt>
+        <dd>
+          If your babies are breastfeed, start here.
+        </dd>
+        <dt>Bottle feed</dt>
+        <dd>
+          Feeding formula or expressed milk with a bottle?
+          This one is for you.
+        </dd>
+        <dt>Mixed feed</dt>
+        <dd>
+          Do you give a "top-up" of formula or
+          expressed milk after breastfeeding? Use
+          this entry type.
+        </dd>
+        <dt>Nappy change</dt>
+        <dd>
+          When did you change a nappy? And what was in it?
+        </dd>
+        <dt>Sleep</dt>
+        <dd>
+          Keep track of when and for how long your babies
+          are sleeping. You wish.
+        </dd>
+      </dl>
     </div>
   </div>
 

@@ -56,14 +56,28 @@
       </div>
     </tal:block>
     <tal:block condition="authenticated_userid">
-      <div class="span16">
+      <div class="span10">
         <h2>Welcome</h2>
         <p>
-          Thank you for using Babytracker. Use the navigation bar
-          along the top to record entries and analyst past behaviour.
+          Thank you for using Babytracker! You can now record entires about your babies,
+          and review and analyse historical data.
         </p>
         <p class="image-box">
           <img src="${request.static_url('babytracker:static/images/sleep.jpg')}" class="thumbnail" />
+        </p>
+      </div>
+      <div class="span5">
+        <h3>Finding your way</h3>
+        <p>
+          Use the navigation bar
+          along the top to choose an action or <a href="/${authenticated_userid}/@@new-entry">get started</a>
+          straight away.
+        </p>
+        <h3>Got a smartphone?</h3>
+        <p>
+          Did you know that there is a mobile app for quickly and
+          easily recording Babytracker entries? Check out the Apple App Store
+          or Android Market!
         </p>
       </div>
     </tal:block>
