@@ -6,3 +6,5 @@ lib
 *.pyc
 *.egg-info
 *.db
+.DS_Store
+.codeintel
