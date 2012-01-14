@@ -1,8 +1,10 @@
 from pyramid.view import view_config, view_defaults
+from pyramid.httpexceptions import HTTPFound
 
 from babytracker.interfaces import VIEW_PERMISSION
 from babytracker import models
 
+import datetime
 import dateutil.parser
 
 @view_defaults(context=models.User)
@@ -128,4 +130,113 @@ class UserViews(object):
 
         return {
             'errors': errors,
+        }
+
+    @view_config(name='new-entry', renderer='../templates/new_entry.pt', permission=VIEW_PERMISSION)
+    def new_entry(self):
+
+        errors = {}
+        response = {
+            'errors': errors,
+            'now': datetime.datetime.now()
+        }
+        post = self.request.POST
+
+        if 'btn.save' in post:
+
+            entry_type = post.get('entry_type')
+            start_date_str = post.get('start', '')
+            start_time_str = post.get('start_time', '')
+            start = "%s %s" % (start_date_str, start_time_str,)
+            start_date = None
+
+            if not start:
+                errors['start'] = u"Start date and time is required"
+
+            if errors:
+                self.request.session.flash(u"Unable to add entry. Please try again", queue='error')
+                return response
+
+            try:
+                start_date = dateutil.parser.parse(start)
+            except ValueError:
+                errors['start'] = u"Invalid start date or time"
+
+            if errors:
+                self.request.session.flash(u"Unable to add entry. Please try again", queue='error')
+                return response
+
+            factory = models.lookup_entry_type(entry_type)
+            if factory is None:
+                self.request.session.flash(u"Invalid entry type - this should not happen", queue='error')
+                return response
+
+            entries = []
+
+            for baby in self.request.context.babies:
+                baby_name = baby.__name__
+
+                end_date = end = None
+                end_date_str = post.get('%s.end' % baby_name, '')
+                end_time_str = post.get('%s.end_time' % baby_name, '')
+                note = post.get('note', '')
+
+                if end_time_str:
+                    end = "%s %s" % (end_date_str, end_time_str,)
+                    try:
+                        end_date = dateutil.parser.parse(end)
+                    except ValueError:
+                        errors['end'] = u"Invalid end date or time"
+
+                kwargs = {
+                    'baby': baby,
+                    'start': start_date,
+                    'end': end_date,
+                    'note': note
+                }
+
+                for key, value in post.items():
+                    if (
+                        key.startswith("%s." % baby_name) and
+                        key not in kwargs and
+                        key not in ('%s.end_time' % baby_name) and
+                        value
+                    ):
+                        # Convert value to correct builtin type based on SQLAlchemy
+                        # column spec
+
+                        attr_name = key[len(baby_name)+1:]
+
+                        attr = getattr(factory, attr_name, None)
+                        if attr is None:
+                            continue
+
+                        type_ = attr.property.columns[0].type.python_type
+
+                        try:
+                            if type_ is datetime.timedelta:
+                                value = datetime.timedelta(minutes=int(value))
+                            else:
+                                value = type_(value)
+                        except (TypeError,AttributeError, ValueError,):
+                            errors[key] = u"Invalid value"
+
+                        kwargs[attr_name] = value
+
+                entry = factory(**kwargs)
+                entries.append(entry)
+
+            if not errors:
+                session = models.DBSession()
+                for entry in entries:
+                    session.add(entry)
+
+                self.request.session.flash(u"Entry added", queue="success")
+
+                # TODO: Redirect to entry list
+                return HTTPFound(location='/')
+
+        return {
+            'errors': errors,
+            'now': datetime.datetime.now(),
         }

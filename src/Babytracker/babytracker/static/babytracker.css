@@ -48,3 +48,19 @@ body {
 .row.padded {
   padding-top: 10px;
 }
+
+/* Make jQuery Tools date input look like Bootstrap */
+.date {
+  box-shadow: none;
+  font-size: inherit;
+}
+
+/* New entry page */
+/*.entryBabySpecific {
+  padding-top: 0;
+  margin-top: 0;
+}
+*/
+.entryShared {
+  margin-bottom: 0;
+}

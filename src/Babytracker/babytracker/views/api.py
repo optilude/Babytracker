@@ -117,7 +117,7 @@ class RootAPI(object):
 
         headers = remember(self.request, user.__name__)
         self.request.response.headerlist.extend(headers)
-        
+
         return user_json(user, self.request)
 
     @view_config(name='logout', request_method='OPTIONS')
@@ -153,7 +153,7 @@ class UserAPI(object):
     def options(self):
         self.request.response.headers['Access-Control-Allow-Methods'] = 'GET POST PUT'
         return None
-    
+
     @view_config(name='', request_method='GET', permission=VIEW_PERMISSION)
     def index(self):
         """Details about the user
@@ -319,7 +319,7 @@ class BabyAPI(object):
         """
 
         return baby_json(self.request.context)
-    
+
     @view_config(name='entries', request_method='OPTIONS')
     def entries_options(self):
         self.request.response.headers['Access-Control-Allow-Methods'] = 'GET'
@@ -697,7 +697,7 @@ class EntryAPI(object):
 
                 try:
                     value = attr.property.columns[0].type.python_type(value)
-                except (AttributeError, ValueError,), e:
+                except (TypeError,AttributeError, ValueError,), e:
                     return error_json(400, u"Incompatible property %s of type %s: %s" % (key, entry.type, str(e)), self.request)
 
                 setattr(entry, key, value)

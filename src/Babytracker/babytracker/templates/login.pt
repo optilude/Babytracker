@@ -6,6 +6,20 @@
   metal:use-macro="layout">
 <head>
 
+<metal:block fill-slot="head">
+<script type="text/javascript">
+jQuery(function($) {
+
+  $(document).ready(function() {
+
+    $("form").validator();
+
+  });
+
+});
+</script>
+</metal:block>
+
 </head>
 <body>
 
