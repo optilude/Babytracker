@@ -1,5 +1,6 @@
 import urllib
 import dateutil.parser
+import datetime
 
 from pyramid.view import view_config, view_defaults
 from pyramid.traversal import resource_path
@@ -695,8 +696,13 @@ class EntryAPI(object):
                 if attr is None:
                     return error_json(400, u"Unknown property %s of type %s" % (key, entry.type,), self.request)
 
+                type_ = attr.property.columns[0].type.python_type
+
                 try:
-                    value = attr.property.columns[0].type.python_type(value)
+                    if type_ is datetime.timedelta:
+                        value = datetime.timedelta(minutes=int(value))
+                    else:
+                        value = type_(value)
                 except (TypeError,AttributeError, ValueError,), e:
                     return error_json(400, u"Incompatible property %s of type %s: %s" % (key, entry.type, str(e)), self.request)
 
