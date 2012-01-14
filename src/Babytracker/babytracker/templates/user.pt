@@ -16,6 +16,37 @@ jQuery(function($) {
       format: 'yyyy-mm-dd',
     });
 
+    // Edit baby
+
+    $("#edit-baby").modal({
+      backdrop: 'static',
+      keyboard: true
+    });
+
+    $(".editBaby").click(function(event) {
+      event.preventDefault();
+
+      $("#edit-baby input[name='baby_id']").val($(this).attr('data-name'));
+
+      $(this).parents("tr").first().children("td[data-field]").each(function() {
+
+          var field = $(this).attr('data-field');
+          var value = $(this).attr('data-value');
+
+          $("#edit-baby input[name=" + field + "]").val(value);
+          $("#edit-baby select[name=" + field + "] option[value='" + value + "']").attr('selected', 'selected');
+
+      });
+
+
+      $("#edit-baby").modal('show');
+
+      return false;
+
+    });
+
+    // Delete baby
+
     $("#confirm-delete-baby").modal({
       backdrop: 'static',
       keyboard: true
@@ -30,7 +61,7 @@ jQuery(function($) {
     $(".deleteBaby").click(function(event) {
       event.preventDefault();
 
-      $("#confirm-delete-baby input[name='baby_name']").val($(this).attr('data-name'));
+      $("#confirm-delete-baby input[name='baby_id']").val($(this).attr('data-name'));
       $("#confirm-delete-baby").modal('show');
 
       return false;
@@ -110,14 +141,14 @@ jQuery(function($) {
         </thead>
         <tbody>
           <tr tal:repeat="baby context.babies">
-            <td>${baby.name}</td>
-            <td>
+            <td data-field="baby_name" data-value="${baby.name}">${baby.name}</td>
+            <td data-field="baby_gender" data-value="${baby.gender}">
               <span tal:condition="baby.gender == 'm'">Boy</span>
               <span tal:condition="baby.gender == 'f'">Girl</span>
             </td>
-            <td>${baby.dob.strftime("%x")}</td>
+            <td data-field="baby_dob" data-value="${baby.dob.isoformat()}">${baby.dob.strftime("%x")}</td>
             <td width="10%">
-              <a class="btn info small" data-controls-modal="edit-baby" data-backdrop="static" data-keyboard="true">Edit</a>
+              <a class="btn info small editBaby" data-name="${baby.__name__}">Edit</a>
             </td>
             <td width="10%">
               <a class="btn danger small deleteBaby" data-name="${baby.__name__}">Delete</a>
@@ -220,6 +251,45 @@ jQuery(function($) {
       </form>
     </div>
 
+    <div id="edit-baby" class="modal hide fade" style="display: none; ">
+      <div class="modal-header">
+        <a href="#" class="close">×</a>
+        <h3>Edit baby</h3>
+      </div>
+      <form method="post" action="${request.resource_url(context)}">
+        <div class="modal-body">
+          <div tal:attributes="class errors.get('baby_name', None) is None and 'clearfix' or 'clearfix error'">
+            <label for="baby_name">Name</label>
+            <div class="input">
+              <input type="text" name="baby_name" required="required" value="" />
+              <span class="help-inline">${errors.get('edit_baby_name', '')}</span>
+            </div>
+          </div>
+          <div tal:attributes="class errors.get('baby_gender', None) is None and 'clearfix' or 'clearfix error'">
+            <label for="baby_gender">Gender</label>
+            <div class="input">
+              <select name="baby_gender" size="1">
+                <option value="m">Boy</option>
+                <option value="f">Girl</option>
+              </select>
+              <span class="help-inline">${errors.get('edit_baby_gender', '')}</span>
+            </div>
+          </div>
+          <div tal:attributes="class errors.get('baby_dob', None) is None and 'clearfix' or 'clearfix error'">
+            <label for="baby_dob">Date of birth</label>
+            <div class="input">
+              <input type="date" name="baby_dob" class="date" required="required" value="" />
+              <span class="help-inline">${errors.get('edit_baby_dob', '')}</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <input type="hidden" name="baby_id" value="" />
+          <input type="submit" class="btn primary" name="btn.edit_baby" value="Save" />
+        </div>
+      </form>
+    </div>
+
     <div id="confirm-delete-baby" class="modal hide fade" style="display: none; ">
       <div class="modal-header">
         <a href="#" class="close">×</a>
@@ -233,7 +303,7 @@ jQuery(function($) {
           </p>
         </div>
         <div class="modal-footer">
-          <input type="hidden" name="baby_name" value="" />
+          <input type="hidden" name="baby_id" value="" />
           <button type="submit" class="btn" name="btn.no">No</button>
           <input type="submit" class="btn danger" name="btn.delete_baby" value="Yes" />
         </div>
