@@ -240,3 +240,14 @@ class UserViews(object):
             'errors': errors,
             'now': datetime.datetime.now(),
         }
+
+    @view_config(name='entries', renderer='../templates/entries.pt', permission=VIEW_PERMISSION)
+    def entries(self):
+
+        errors = {}
+        response = {
+            'errors': errors,
+            'now': datetime.datetime.now()
+        }
+
+        return response

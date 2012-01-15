@@ -10,7 +10,7 @@
 <body>
 
   <div metal:fill-slot="page_header">
-    <h1>Baby tracker <small>Home</small></h1>
+    <h1>Babytracker <small>Home</small></h1>
   </div>
   <div class="row" metal:fill-slot="body">
     <tal:block condition="not:authenticated_userid">

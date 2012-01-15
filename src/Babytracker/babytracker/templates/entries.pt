@@ -1,0 +1,135 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html
+  xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  metal:use-macro="layout">
+<head>
+
+<metal:block fill-slot="head">
+
+<script type="text/javascript">
+jQuery(function($) {
+
+  var client = new BabyTracker('/api/');
+  var end = null;
+  var start = new Date(); start.setMonth(start.getMonth() - 2);
+
+  function formatEntry(entry) {
+    var title = "";
+    var details = [];
+
+    if(entry.entry_type == 'breast_feed') {
+      title = "Breast feed";
+      if(entry.left_duration)
+        details.push(entry.left_duration + "m left");
+      if(entry.right_duration)
+        details.push(entry.right_duration + "m right");
+    } else if(entry.entry_type == 'bottle_feed') {
+      title = "Bottle feed";
+      if(entry.amount)
+        details.push(entry.amount + "ml");
+    } else if(entry.entry_type == 'mixed_feed') {
+      title = "Mixed feed";
+      if(entry.left_duration)
+        details.push(entry.left_duration + "m left");
+      if(entry.right_duration)
+        details.push(entry.right_duration + "m right");
+      if(entry.topup)
+        details.push(entry.topup + "ml");
+    } else if(entry.entry_type == 'sleep') {
+      title = "Sleep";
+      if(entry.amount)
+        details.push(entry.duration + "min");
+    } else if(entry.entry_type == 'nappy_change') {
+      title = "Nappy change";
+      if(entry.contents)
+        details.push(entry.contents);
+    } else  {
+      title = "Other";
+    }
+
+    var html = title;
+    if(details.length > 0)
+      html += "<br/>(" + details.join(', ') + ")";
+    if(entry.note)
+      html = '<a class="entryTitle" href="#" data-placement="above" rel="twipsy" title="' + entry.note + '">' + html + '</a>';
+    return html;
+  }
+
+  $(document).ready(function() {
+
+    $(".date").dateinput({
+      format: 'yyyy-mm-dd',
+    });
+
+    client.initialize();
+
+    var timeline = new links.Timeline(document.getElementById('timeline'));
+    timeline.draw([], {
+      width:  '100%',
+      height: '${50 + (75 * len(context.babies))}px',
+      editable: false,
+      selectable: true,
+      axisOnTop: true,
+      showNavigation: false,
+      start: end? end : new Date(),
+      scale: links.Timeline.StepDate.SCALE.MINUTE,
+      step: 30
+    });
+
+    for(var i = 0; i < client.user.babies.length; ++i) {
+      client.user.babies[i].getEntries(start, end, null, function(baby, entries) {
+        // Get all entry data and update the data list
+        var data = timeline.getData();
+        for(var j = 0; j < entries.length; ++j) {
+          data.push({
+            'group': baby.name,
+            'start': entries[j].start? new Date(entries[j].start) : null,
+            'end': entries[j].end? new Date(entries[j].end) : null,
+            'content': formatEntry(entries[j]),
+          });
+        }
+
+        timeline.setAutoScale(false);
+        timeline.setData(data);
+        timeline.setScale(links.Timeline.StepDate.SCALE.MINUTE, 30);
+        var end = new Date();
+        var start = new Date(); start.setHours(end.getHours() - 4);
+        timeline.setVisibleChartRange(start, end);
+
+        $(".entryTitle").twipsy();
+
+      }, function(status, error) {
+        alert("Error fetching entry data: " + error.error + ". This should not happen.");
+      });
+    }
+
+  });
+
+});
+</script>
+</metal:block>
+
+</head>
+<body>
+
+  <div metal:fill-slot="page_header">
+    <h1>Analyse <small>past entries</small></h1>
+  </div>
+  <div class="row" metal:fill-slot="body">
+    <div class="span16">
+
+      <p>
+        The timeline below shows the entries you have
+        recorded about your babies in the past. Click on an entry
+        for more details.
+      </p>
+
+      <div id="timeline"><!-- --></div>
+
+    </div>
+  </div>
+
+</body>
+</html>

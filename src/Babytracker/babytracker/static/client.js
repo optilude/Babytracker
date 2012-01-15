@@ -17,7 +17,7 @@ var BabyTracker = function(url) {
 BabyTracker._createEntry = function(data) {
     entry_type = data['entry_type'];
     factory = BabyTracker._entryTypeMap[entry_type];
-    return factory(data);
+    return new factory(data);
 };
 BabyTracker._entryTypeMap = {}; // poplated below
 
@@ -55,6 +55,7 @@ BabyTracker.prototype = {
             success: function(data, textStatus, jqXHR) {
                 self.login_url = data['login_url'];
                 self.logout_url = data['logout_url'];
+                self.user = new BabyTracker.User(data['user']);
                 if(callback != undefined) {
                     callback(self);
                 }
@@ -368,19 +369,19 @@ BabyTracker.Baby.prototype = {
      * response code and the error information returned by the server.
      */
     getEntries: function(start, end, entry_type, callback, errorCallback, async) {
-        // TODO: Date conversion?
         var self = this;
         if(async == undefined) async = true;
+
+        var data = {};
+        if(start) data['start'] = start.toDateString();
+        if(end) data['end'] = end.toDateString();
+        if(entry_type) data['entry_type'] = entry_type;
+
         jQuery.ajax({
             type: 'GET',
-            url: self.url,
+            url: self.url + '/@@entries',
             dataType: 'json',
-            data: JSON.stringify({
-                start: start,
-                end: end,
-                entry_type: entry_type,
-            }),
-            processData: false,
+            data: data,
             xhrFields: {
                 withCredentials: true
             },

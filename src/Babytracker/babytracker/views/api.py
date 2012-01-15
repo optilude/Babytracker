@@ -4,7 +4,7 @@ import datetime
 
 from pyramid.view import view_config, view_defaults
 from pyramid.traversal import resource_path
-from pyramid.security import remember, forget
+from pyramid.security import remember, forget, authenticated_userid
 
 from babytracker.interfaces import VIEW_PERMISSION, EDIT_PERMISSION
 from babytracker import models
@@ -54,14 +54,38 @@ class RootAPI(object):
         200 -> {
             'login_url' : '/api/@@login', // API URL for logging in
             'logout_url': /api/@@logout'  // API URL for logging out
+            'user': {                     // Current user if logged in, or null
+                'url' : '/api/test@example.org', // API root for user
+                'email': 'test@example.org',     // User's email address
+                'name' : 'John Smith',           // User's full name
+                'babies': [
+                    {
+                        'url'   : '/api/test@example.org/jill' // Baby URL
+                        'name'  : 'Jill',                      // Baby name
+                        'dob'   : '2011-01-01',                // Baby date of birth
+                        'gender': 'f'                          // Baby gender
+                    },
+                    ...
+                ]
+            }
         }
         """
 
         prefix = api_resource_url(self.request.context, self.request)
 
+        userid = authenticated_userid(self.request)
+        user = None
+
+        if userid is not None:
+            try:
+                user = user_json(self.request.context[userid], self.request)
+            except KeyError:
+                pass
+
         return {
             'login_url': prefix + '@@login',
             'logout_url': prefix + '@@logout',
+            'user': user,
         }
 
     @view_config(name='login', request_method='OPTIONS')
@@ -319,7 +343,7 @@ class BabyAPI(object):
         403 -> Not authorised to view this baby
         """
 
-        return baby_json(self.request.context)
+        return baby_json(self.request.context, self.request)
 
     @view_config(name='entries', request_method='OPTIONS')
     def entries_options(self):

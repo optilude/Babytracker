@@ -261,8 +261,8 @@ class Entry(Base):
     def to_json_dict(self):
         return {
             'entry_type': self.type,
-            'start': self.start.isoformat(),
-            'end': self.end.isoformat(),
+            'start': self.start.isoformat() if self.start is not None else None,
+            'end': self.end.isoformat() if self.end is not None else None,
             'note': self.note,
         }
 
@@ -283,8 +283,8 @@ class BreastFeed(Entry):
     def to_json_dict(self):
         entry = super(BreastFeed, self).to_json_dict()
         entry.update({
-            'left_duration': self.left_duration,
-            'right_duration': self.right_duration,
+            'left_duration': self.left_duration.seconds / 60,
+            'right_duration': self.right_duration.seconds / 60,
         })
         return entry
 
@@ -325,7 +325,7 @@ class MixedFeed(BreastFeed):
     # JSON representation
 
     def to_json_dict(self):
-        entry = super(BreastFeed, self).to_json_dict()
+        entry = super(MixedFeed, self).to_json_dict()
         entry.update({
             'topup': self.topup,
         })
@@ -346,7 +346,7 @@ class Sleep(Entry):
     def to_json_dict(self):
         entry = super(BreastFeed, self).to_json_dict()
         entry.update({
-            'duration': self.duration,
+            'duration': self.duration.seconds / 60,
         })
         return entry
 

@@ -7,6 +7,7 @@
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
   <link rel="stylesheet" href="${request.static_url('babytracker:static/bootstrap/bootstrap.min.css')}" type="text/css" media="screen" charset="utf-8" />
   <link rel="stylesheet" href="${request.static_url('babytracker:static/jquery.tools/dateinput.css')}" type="text/css" media="screen" charset="utf-8" />
+  <link rel="stylesheet" href="${request.static_url('babytracker:static/timeline/timeline.css')}" type="text/css" media="screen" charset="utf-8" />
   <link rel="stylesheet" href="${request.static_url('babytracker:static/babytracker.css')}" type="text/css" media="screen" charset="utf-8" />
 
   <script src="${request.static_url('babytracker:static/jquery-1.6.4.min.js')}"></script>
@@ -16,6 +17,9 @@
   <script src="${request.static_url('babytracker:static/bootstrap/js/bootstrap-twipsy.js')}"></script>
   <script src="${request.static_url('babytracker:static/bootstrap/js/bootstrap-popover.js')}"></script>
   <script src="${request.static_url('babytracker:static/bootstrap/js/bootstrap-modal.js')}"></script>
+  <script src="${request.static_url('babytracker:static/bootstrap/js/bootstrap-tabs.js')}"></script>
+
+  <script src="${request.static_url('babytracker:static/timeline/timeline-min.js')}"></script>
 
   <script src="${request.static_url('babytracker:static/client.js')}"></script>
 
@@ -35,7 +39,10 @@
           <ul class="nav">
             <li class="${request.path == '/' and 'active' or None}"><a href="/">Home</a></li>
             <li class="${request.path == '/%s/@@new-entry' % authenticated_userid and 'active' or None}" tal:condition="authenticated_userid">
-              <a href="/${authenticated_userid}/@@new-entry">New entry</a>
+              <a href="/${authenticated_userid}/@@new-entry">Record</a>
+            </li>
+            <li class="${request.path == '/%s/@@entries' % authenticated_userid and 'active' or None}" tal:condition="authenticated_userid">
+              <a href="/${authenticated_userid}/@@entries">Analyse</a>
             </li>
             <li class="${request.path == '/@@signup' and 'active' or None}" tal:condition="not:authenticated_userid">
               <a href="/@@signup">Sign up</a>
