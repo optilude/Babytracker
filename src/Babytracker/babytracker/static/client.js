@@ -258,7 +258,7 @@ BabyTracker.User.prototype = {
 
 BabyTracker.Baby = function(data) {
     this.url = data['url'] || null;
-    this.dob = data['dob'] || null; // TODO: Date conversion?
+    this.dob = data['dob']? new Date(data['dob']) : null;
     this.name = data['name'] || null;
     this.gender = data['gender'] || null;
 };
@@ -373,8 +373,8 @@ BabyTracker.Baby.prototype = {
         if(async == undefined) async = true;
 
         var data = {};
-        if(start) data['start'] = start.toDateString();
-        if(end) data['end'] = end.toDateString();
+        if(start) data['start'] = start.toISOString();
+        if(end) data['end'] = end.toISOString();
         if(entry_type) data['entry_type'] = entry_type;
 
         jQuery.ajax({
@@ -545,8 +545,8 @@ BabyTracker.Entry.prototype = {
 BabyTracker.BreastFeed = function(data) {
     this.entry_type = 'breast_feed';
     this.url = data['url'] || null;
-    this.start = data['start'] || null; // TODO: Date conversion?
-    this.end = data['end'] || null; // TODO: Date conversion?
+    this.start = data['start']? new Date(data['start']) : null;
+    this.end = data['end']? new Date(data['end']) : null;
     this.note = data['note'] || null;
     this.left_duration = data['left_duration'] || null;
     this.right_duration = data['right_duration'] || null;
@@ -557,8 +557,8 @@ BabyTracker._entryTypeMap['breast_feed'] = BabyTracker.BreastFeed;
 BabyTracker.BottleFeed = function(data) {
     this.entry_type = 'bottle_feed';
     this.url = data['url'] || null;
-    this.start = data['start'] || null; // TODO: Date conversion?
-    this.end = data['end'] || null; // TODO: Date conversion?
+    this.start = data['start']? new Date(data['start']) : null;
+    this.end = data['end']? new Date(data['end']) : null;
     this.note = data['note'] || null;
     this.amount = data['amount'] || null;
 };
@@ -568,8 +568,8 @@ BabyTracker._entryTypeMap['bottle_feed'] = BabyTracker.BottleFeed;
 BabyTracker.MixedFeed = function(data) {
     this.entry_type = 'mixed_feed';
     this.url = data['url'] || null;
-    this.start = data['start'] || null; // TODO: Date conversion?
-    this.end = data['end'] || null; // TODO: Date conversion?
+    this.start = data['start']? new Date(data['start']) : null;
+    this.end = data['end']? new Date(data['end']) : null;
     this.note = data['note'] || null;
     this.left_duration = data['left_duration'] || null;
     this.right_duration = data['right_duration'] || null;
@@ -581,8 +581,8 @@ BabyTracker._entryTypeMap['mixed_feed'] = BabyTracker.MixedFeed;
 BabyTracker.Sleep = function(data) {
     this.entry_type = 'sleep';
     this.url = data['url'] || null;
-    this.start = data['start'] || null; // TODO: Date conversion?
-    this.end = data['end'] || null; // TODO: Date conversion?
+    this.start = data['start']? new Date(data['start']) : null;
+    this.end = data['end']? new Date(data['end']) : null;
     this.note = data['note'] || null;
     this.duration = data['duration'] || null;
 };
@@ -592,8 +592,8 @@ BabyTracker._entryTypeMap['sleep'] = BabyTracker.Sleep;
 BabyTracker.NappyChange = function(data) {
     this.entry_type = 'nappy_change';
     this.url = data['url'] || null;
-    this.start = data['start'] || null; // TODO: Date conversion?
-    this.end = data['end'] || null; // TODO: Date conversion?
+    this.start = data['start']? new Date(data['start']) : null;
+    this.end = data['end']? new Date(data['end']) : null;
     this.note = data['note'] || null;
     this.contents = data['contents'] || null;
 };

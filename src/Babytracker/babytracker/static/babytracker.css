@@ -56,11 +56,21 @@ body {
 }
 
 /* New entry page */
-/*.entryBabySpecific {
-  padding-top: 0;
-  margin-top: 0;
-}
-*/
 .entryShared {
   margin-bottom: 0;
+}
+
+/* Timeline */
+.timeline-event-content a {
+  text-decoration: none;
+  cursor: hand;
+  color: inherit;
+}
+.timeline-event-content h4 {
+  font-size: 100%;
+  font-weight: bold;
+  margin: 0;
+  padding: 0;
+  line-height: inherit;
+  color: inherit;
 }

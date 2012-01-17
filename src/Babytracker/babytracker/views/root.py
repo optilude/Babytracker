@@ -88,7 +88,6 @@ class RootViews(object):
 
                     self.request.session.flash('You are now logged in.', queue='success')
 
-                    # TODO: Redirect to entry screen
                     return HTTPFound(location='/', headers=headers)
 
         return {

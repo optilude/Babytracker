@@ -20,6 +20,7 @@
   <script src="${request.static_url('babytracker:static/bootstrap/js/bootstrap-tabs.js')}"></script>
 
   <script src="${request.static_url('babytracker:static/timeline/timeline-min.js')}"></script>
+  <script src="${request.static_url('babytracker:static/date.js')}"></script>
 
   <script src="${request.static_url('babytracker:static/client.js')}"></script>
 

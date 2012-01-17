@@ -1,4 +1,5 @@
 from pyramid.view import view_config, view_defaults
+from pyramid.traversal import resource_path
 from pyramid.httpexceptions import HTTPFound
 
 from babytracker.interfaces import VIEW_PERMISSION
@@ -233,8 +234,7 @@ class UserViews(object):
 
                 self.request.session.flash(u"Entry added", queue="success")
 
-                # TODO: Redirect to entry list
-                return HTTPFound(location='/')
+                return HTTPFound(location=resource_path(self.request.context) + '@@entries')
 
         return {
             'errors': errors,
@@ -244,10 +244,13 @@ class UserViews(object):
     @view_config(name='entries', renderer='../templates/entries.pt', permission=VIEW_PERMISSION)
     def entries(self):
 
+        today = datetime.date.today();
+        days = [today - datetime.timedelta(days=i) for i in range(7)]
+
         errors = {}
         response = {
             'errors': errors,
-            'now': datetime.datetime.now()
+            'days': days,
         }
 
         return response
