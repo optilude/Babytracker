@@ -16,29 +16,12 @@ jQuery(function($) {
       format: 'yyyy-mm-dd',
     });
 
-    function initEntryType() {
-        var type = $("#entry-type-selector li.active").attr('data-entry-type-select');
+    var default_entry_type = "${entry_type}"; // get from server
+    var hash = default_entry_type? "#" + default_entry_type : window.location.hash;
 
-        $("#entry-type-field").val(type);
-
-        $("#new-entry-form [data-entry-type]").each(function() {
-            var allowedTypes = $(this).attr('data-entry-type').split(" ");
-            if(allowedTypes.indexOf(type) == -1) {
-                $(this).hide();
-            } else {
-                $(this).show();
-            }
-        });
+    if(hash) {
+      $("#entry-type-selector li a[href='" + hash + "']").click();
     }
-    initEntryType();
-
-    $("#entry-type-selector li a").click(function() {
-      $("#entry-type-selector li").removeClass('active');
-      $(this).parent().addClass('active');
-      initEntryType();
-      return false;
-    });
-
 
   });
 
@@ -55,124 +38,339 @@ jQuery(function($) {
   <div class="row" metal:fill-slot="body">
     <div class="span10">
 
-    <!-- TODO: Split into multiple forms so that we only send valid keys -->
-      <form id="new-entry-form" action="${request.resource_url(context)}@@new-entry" method="post">
+      <ul id="entry-type-selector" class="pills" data-pills="pills">
+        <li class="active"><a href="#breast_feed">Breast</a></li>
+        <li><a href="#bottle_feed">Bottle</a></li>
+        <li><a href="#mixed_feed">Mixed</a></li>
+        <li><a href="#nappy_change">Nappy</a></li>
+        <li><a href="#sleep">Sleep</a></li>
+      </ul>
 
-        <ul id="entry-type-selector" class="pills">
-          <li class="active" data-entry-type-select="breast_feed"><a href="#">Breast</a></li>
-          <li data-entry-type-select="bottle_feed"><a href="#">Bottle</a></li>
-          <li data-entry-type-select="mixed_feed"><a href="#">Mixed</a></li>
-          <li data-entry-type-select="nappy_change"><a href="#">Nappy</a></li>
-          <li data-entry-type-select="sleep"><a href="#">Sleep</a></li>
-        </ul>
+      <div class="pill-content">
+        <div id="breast_feed" class="active"
+          tal:define="errors errors.get('breast_feed', {});
+                      data request.POST if request.POST.get('entry_type', None) == 'breast_feed' else {}">
+          <form action="${request.resource_url(context)}@@new-entry" method="post">
 
-        <input type="hidden" id="entry-type-field" name="entry_type" value="breast" />
+            <input type="hidden" name="entry_type" value="breast_feed" />
 
-        <fieldset class="entryShared">
-          <div tal:attributes="class errors.get('start', None) is None and '' or 'error'">
-            <label for="start">Start</label>
-            <div class="input">
-              <div class="inline-inputs">
-                <input type="date" name="start" class="date small" required="required" value="${now.date().isoformat()}" />
-                <input type="time" name="start_time" class="time mini" required="required" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${now.time().strftime('%H:%M')}" />
+            <fieldset class="entryShared">
+              <div tal:attributes="class errors.get('start', None) is None and 'clearfix' or 'clearfix error'">
+                <label for="breast_feed.start">Start</label>
+                <div class="input">
+                  <div class="inline-inputs">
+                    <input type="date" id="breast_feed.start" name="start" class="date small" required="required" value="${data.get('start', now.date().isoformat())}" />
+                    <input type="time" id="breast_feed.start" name="start_time" class="time mini" required="required" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('start_time', now.time().strftime('%H:%M'))}" />
+                  </div>
+                  <span class="help-inline">${errors.get('start', '')}</span>
+                </div>
               </div>
-              <span class="help-inline">${errors.get('start', '')}</span>
-            </div>
-          </div>
 
-        </fieldset>
-        <fieldset class="entryBabySpecific" tal:repeat="baby context.babies">
-          <legend>${baby.name}</legend>
+            </fieldset>
+            <fieldset class="entryBabySpecific" tal:repeat="baby context.babies">
+              <legend>${baby.name}</legend>
 
-          <div tal:attributes="class errors.get('%s.left_duration' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'"
-              data-entry-type="breast_feed mixed_feed">
-            <label for="${baby.__name__}.left_duration">Left breast:</label>
-            <div class="input">
-              <input name="${baby.__name__}.left_duration" id="${baby.__name__}.left_duration" type="number" min="0" class="mini" />
-              <span class="help-inline">min</span>
-              <span class="help-inline">${errors.get('%s.left_duration' % baby.__name__, '')}</span>
-            </div>
-          </div>
-
-          <div tal:attributes="class errors.get('%s.right_duration' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'"
-              data-entry-type="breast_feed mixed_feed">
-            <label for="${baby.__name__}.right_duration">Right breast:</label>
-            <div class="input">
-              <input name="${baby.__name__}.right_duration" id="${baby.__name__}.right_duration" type="number" min="0" class="mini" />
-              <span class="help-inline">min</span>
-              <span class="help-inline">${errors.get('%s.right_duration' % baby.__name__, '')}</span>
-            </div>
-          </div>
-
-          <div tal:attributes="class errors.get('%s.topup' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'"
-              data-entry-type="mixed_feed">
-            <label for="${baby.__name__}.topup">Top-up:</label>
-            <div class="input">
-              <input name="${baby.__name__}.topup" id="${baby.__name__}.topup" type="number" min="0" class="mini" />
-              <span class="help-inline">ml</span>
-              <span class="help-inline">${errors.get('%s.topup' % baby.__name__, '')}</span>
-            </div>
-          </div>
-
-          <div tal:attributes="class errors.get('%s.amount' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'"
-              data-entry-type="bottle_feed">
-            <label for="${baby.__name__}.amount">Amount:</label>
-            <div class="input">
-              <input name="${baby.__name__}.amount" id="${baby.__name__}.amount" type="number" min="0" class="mini" />
-              <span class="help-inline">ml</span>
-              <span class="help-inline">${errors.get('%s.amount' % baby.__name__, '')}</span>
-            </div>
-          </div>
-
-          <div tal:attributes="class errors.get('%s.duration' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'"
-              data-entry-type="sleep">
-            <label for="${baby.__name__}.duration">Duration:</label>
-            <div class="input">
-              <input name="${baby.__name__}.duration" id="${baby.__name__}.duration" type="number" min="0" class="mini" />
-              <span class="help-inline">min</span>
-              <span class="help-inline">${errors.get('%s.duration' % baby.__name__, '')}</span>
-            </div>
-          </div>
-
-          <div tal:attributes="class errors.get('%s.contents' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'"
-              data-entry-type="nappy_change">
-            <label for="${baby.__name__}.contents">Contents:</label>
-            <div class="input">
-              <select name="${baby.__name__}.contents" id="${baby.__name__}.contents" size="1">
-                <option value="none">None</option>
-                <option value="wet">Wet</option>
-                <option value="dirty">Dirty</option>
-              </select>
-              <span class="help-inline">${errors.get('%s.contents' % baby.__name__, '')}</span>
-            </div>
-          </div>
-
-          <div tal:attributes="class errors.get('%s.note' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
-            <label for="${baby.__name__}.note">Note:</label>
-            <div class="input">
-              <input name="${baby.__name__}.note" id="${baby.__name__}.note" type="text" />
-              <span class="help-inline">${errors.get('%s.note' % baby.__name__, '')}</span>
-            </div>
-          </div>
-
-          <div tal:attributes="class errors.get('%s.end' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
-            <label for="${baby.__name__}.end">End:</label>
-            <div class="input">
-              <div class="inline-inputs">
-                <input type="date" name="${baby.__name__}.end" class="date small" value="${now.date().isoformat()}" />
-                <input type="time" name="${baby.__name__}.end_time" class="time mini" pattern="[0-9]{1,2}:[0-9]{1,2}" value="" />
+              <div tal:attributes="class errors.get('%s.left_duration' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="breast_feed.${baby.__name__}.left_duration">Left breast:</label>
+                <div class="input">
+                  <input name="${baby.__name__}.left_duration" id="breast_feed.${baby.__name__}.left_duration" type="number" min="0" class="mini" value="${data.get('%s.left_duration' % baby.__name__, '')}" />
+                  <span class="help-inline">min</span>
+                  <span class="help-inline">${errors.get('%s.left_duration' % baby.__name__, '')}</span>
+                </div>
               </div>
-              <span class="help-inline">${errors.get('%s.end' % baby.__name__, '')}</span>
+
+              <div tal:attributes="class errors.get('%s.right_duration' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="breast_feed.${baby.__name__}.right_duration">Right breast:</label>
+                <div class="input">
+                  <input name="${baby.__name__}.right_duration" id="breast_feed.${baby.__name__}.right_duration" type="number" min="0" class="mini" value="${data.get('%s.right_duration' % baby.__name__, '')}" />
+                  <span class="help-inline">min</span>
+                  <span class="help-inline">${errors.get('%s.right_duration' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+              <div tal:attributes="class errors.get('%s.note' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="breast_feed.${baby.__name__}.note">Note:</label>
+                <div class="input">
+                  <input name="${baby.__name__}.note" id="breast_feed.${baby.__name__}.note" type="text" value="${data.get('%s.note' % baby.__name__, '')}" />
+                  <span class="help-inline">${errors.get('%s.note' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+              <div tal:attributes="class errors.get('%s.end' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="breast_feed.${baby.__name__}.end">End:</label>
+                <div class="input">
+                  <div class="inline-inputs">
+                    <input type="date" id="breast_feed.${baby.__name__}.end" name="${baby.__name__}.end" class="date small" value="${data.get('%s.end' % baby.__name__, now.date().isoformat())}" />
+                    <input type="time" id="breast_feed.${baby.__name__}.end_time" name="${baby.__name__}.end_time" class="time mini" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('%s.end_time' % baby.__name__, '')}" />
+                  </div>
+                  <span class="help-inline">${errors.get('%s.end' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+            </fieldset>
+
+            <div class="actions">
+              <input type="submit" class="btn large primary" name="btn.save" value="Save" />
             </div>
-          </div>
 
-        </fieldset>
+          </form>
+        </div>
+        <div id="bottle_feed"
+          tal:define="errors errors.get('bottle_feed', {});
+                      data request.POST if request.POST.get('entry_type', None) == 'bottle_feed' else {}">
 
-        <div class="actions">
-          <input type="submit" class="btn large primary" name="btn.save" value="Save" />
+          <form action="${request.resource_url(context)}@@new-entry" method="post">
+            <input type="hidden" name="entry_type" value="bottle_feed" />
+
+            <fieldset class="entryShared">
+              <div tal:attributes="class errors.get('start', None) is None and 'clearfix' or 'clearfix error'">
+                <label for="bottle_feed.start">Start</label>
+                <div class="input">
+                  <div class="inline-inputs">
+                    <input type="date" id="bottle_feed.start" name="start" class="date small" required="required" value="${data.get('start', now.date().isoformat())}" />
+                    <input type="time" id="bottle_feed.start" name="start_time" class="time mini" required="required" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('start_time', now.time().strftime('%H:%M'))}" />
+                  </div>
+                  <span class="help-inline">${errors.get('start', '')}</span>
+                </div>
+              </div>
+
+            </fieldset>
+            <fieldset class="entryBabySpecific" tal:repeat="baby context.babies">
+              <legend>${baby.name}</legend>
+
+              <div tal:attributes="class errors.get('%s.amount' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="bottle_feed.${baby.__name__}.amount">Amount:</label>
+                <div class="input">
+                  <input name="${baby.__name__}.amount" id="bottle_feed.${baby.__name__}.amount" type="number" min="0" class="mini" value="${data.get('%s.amount' % baby.__name__, '')}" />
+                  <span class="help-inline">ml</span>
+                  <span class="help-inline">${errors.get('%s.amount' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+              <div tal:attributes="class errors.get('%s.note' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="bottle_feed.${baby.__name__}.note">Note:</label>
+                <div class="input">
+                  <input name="${baby.__name__}.note" id="bottle_feed.${baby.__name__}.note" type="text" value="${data.get('%s.note' % baby.__name__, '')}" />
+                  <span class="help-inline">${errors.get('%s.note' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+              <div tal:attributes="class errors.get('%s.end' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="bottle_feed.${baby.__name__}.end">End:</label>
+                <div class="input">
+                  <div class="inline-inputs">
+                    <input type="date" id="bottle_feed.${baby.__name__}.end" name="${baby.__name__}.end" class="date small" value="${data.get('%s.end' % baby.__name__, now.date().isoformat())}" />
+                    <input type="time" id="bottle_feed.${baby.__name__}.end_time" name="${baby.__name__}.end_time" class="time mini" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('%s.end_time' % baby.__name__, '')}" />
+                  </div>
+                  <span class="help-inline">${errors.get('%s.end' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+            </fieldset>
+
+            <div class="actions">
+              <input type="submit" class="btn large primary" name="btn.save" value="Save" />
+            </div>
+          </form>
+        </div>
+        <div id="mixed_feed"
+          tal:define="errors errors.get('mixed_feed', {});
+                      data request.POST if request.POST.get('entry_type', None) == 'mixed_feed' else {}">
+
+          <form action="${request.resource_url(context)}@@new-entry" method="post">
+            <input type="hidden" name="entry_type" value="mixed_feed" />
+
+            <fieldset class="entryShared">
+              <div tal:attributes="class errors.get('start', None) is None and 'clearfix' or 'clearfix error'">
+                <label for="mixed_feed.start">Start</label>
+                <div class="input">
+                  <div class="inline-inputs">
+                    <input type="date" id="mixed_feed.start" name="start" class="date small" required="required" value="${data.get('start', now.date().isoformat())}" />
+                    <input type="time" id="mixed_feed.start" name="start_time" class="time mini" required="required" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('start_time', now.time().strftime('%H:%M'))}" />
+                  </div>
+                  <span class="help-inline">${errors.get('start', '')}</span>
+                </div>
+              </div>
+
+            </fieldset>
+            <fieldset class="entryBabySpecific" tal:repeat="baby context.babies">
+              <legend>${baby.name}</legend>
+
+              <div tal:attributes="class errors.get('%s.left_duration' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="mixed_feed.${baby.__name__}.left_duration">Left breast:</label>
+                <div class="input">
+                  <input name="${baby.__name__}.left_duration" id="mixed_feed.${baby.__name__}.left_duration" type="number" min="0" class="mini" value="${data.get('%s.left_duration' % baby.__name__, '')}" />
+                  <span class="help-inline">min</span>
+                  <span class="help-inline">${errors.get('%s.left_duration' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+              <div tal:attributes="class errors.get('%s.right_duration' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="mixed_feed.${baby.__name__}.right_duration">Right breast:</label>
+                <div class="input">
+                  <input name="${baby.__name__}.right_duration" id="mixed_feed.${baby.__name__}.right_duration" type="number" min="0" class="mini" value="${data.get('%s.right_duration' % baby.__name__, '')}" />
+                  <span class="help-inline">min</span>
+                  <span class="help-inline">${errors.get('%s.right_duration' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+              <div tal:attributes="class errors.get('%s.topup' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="mixed_feed.${baby.__name__}.topup">Top-up:</label>
+                <div class="input">
+                  <input name="${baby.__name__}.topup" id="mixed_feed.${baby.__name__}.topup" type="number" min="0" class="mini" value="${data.get('%s.topup' % baby.__name__, '')}" />
+                  <span class="help-inline">ml</span>
+                  <span class="help-inline">${errors.get('%s.topup' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+              <div tal:attributes="class errors.get('%s.note' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="mixed_feed.${baby.__name__}.note">Note:</label>
+                <div class="input">
+                  <input name="${baby.__name__}.note" id="mixed_feed.${baby.__name__}.note" type="text" value="${data.get('%s.note' % baby.__name__, '')}" />
+                  <span class="help-inline">${errors.get('%s.note' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+              <div tal:attributes="class errors.get('%s.end' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="mixed_feed.${baby.__name__}.end">End:</label>
+                <div class="input">
+                  <div class="inline-inputs">
+                    <input type="date" id="mixed_feed.${baby.__name__}.end" name="${baby.__name__}.end" class="date small" value="${data.get('%s.end' % baby.__name__, now.date().isoformat())}" />
+                    <input type="time" id="mixed_feed.${baby.__name__}.end_time" name="${baby.__name__}.end_time" class="time mini" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('%s.end_time' % baby.__name__, '')}" />
+                  </div>
+                  <span class="help-inline">${errors.get('%s.end' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+            </fieldset>
+
+            <div class="actions">
+              <input type="submit" class="btn large primary" name="btn.save" value="Save" />
+            </div>
+          </form>
+        </div>
+        <div id="sleep"
+          tal:define="errors errors.get('sleep', {});
+                      data request.POST if request.POST.get('entry_type', None) == 'sleep' else {}">
+
+          <form action="${request.resource_url(context)}@@new-entry" method="post">
+            <input type="hidden" name="entry_type" value="sleep" />
+
+            <fieldset class="entryShared">
+              <div tal:attributes="class errors.get('start', None) is None and 'clearfix' or 'clearfix error'">
+                <label for="sleep.start">Start</label>
+                <div class="input">
+                  <div class="inline-inputs">
+                    <input type="date" id="sleep.start" name="start" class="date small" required="required" value="${data.get('start', now.date().isoformat())}" />
+                    <input type="time" id="sleep.start" name="start_time" class="time mini" required="required" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('start_time', now.time().strftime('%H:%M'))}" />
+                  </div>
+                  <span class="help-inline">${errors.get('start', '')}</span>
+                </div>
+              </div>
+
+            </fieldset>
+            <fieldset class="entryBabySpecific" tal:repeat="baby context.babies">
+              <legend>${baby.name}</legend>
+
+              <div tal:attributes="class errors.get('%s.duration' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="sleep.${baby.__name__}.duration">Duration:</label>
+                <div class="input">
+                  <input name="${baby.__name__}.duration" id="sleep.${baby.__name__}.duration" type="number" min="0" class="mini" value="${data.get('%s.duration' % baby.__name__, '')}" />
+                  <span class="help-inline">min</span>
+                  <span class="help-inline">${errors.get('%s.duration' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+              <div tal:attributes="class errors.get('%s.note' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="sleep.${baby.__name__}.note">Note:</label>
+                <div class="input">
+                  <input name="${baby.__name__}.note" id="sleep.${baby.__name__}.note" type="text" value="${data.get('%s.note' % baby.__name__, '')}" />
+                  <span class="help-inline">${errors.get('%s.note' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+              <div tal:attributes="class errors.get('%s.end' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="sleep.${baby.__name__}.end">End:</label>
+                <div class="input">
+                  <div class="inline-inputs">
+                    <input type="date" id="sleep.${baby.__name__}.end" name="${baby.__name__}.end" class="date small" value="${data.get('%s.end' % baby.__name__, now.date().isoformat())}" />
+                    <input type="time" id="sleep.${baby.__name__}.end_time" name="${baby.__name__}.end_time" class="time mini" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('%s.end_time' % baby.__name__, '')}" />
+                  </div>
+                  <span class="help-inline">${errors.get('%s.end' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+            </fieldset>
+
+            <div class="actions">
+              <input type="submit" class="btn large primary" name="btn.save" value="Save" />
+            </div>
+          </form>
+        </div>
+        <div id="nappy_change"
+          tal:define="errors errors.get('nappy_change', {});
+                      data request.POST if request.POST.get('entry_type', None) == 'nappy_change' else {}">
+
+          <form action="${request.resource_url(context)}@@new-entry" method="post">
+            <input type="hidden" name="entry_type" value="nappy_change" />
+
+            <fieldset class="entryShared">
+              <div tal:attributes="class errors.get('start', None) is None and 'clearfix' or 'clearfix error'">
+                <label for="nappy_change.start">Start</label>
+                <div class="input">
+                  <div class="inline-inputs">
+                    <input type="date" id="nappy_change.start" name="start" class="date small" required="required" value="${data.get('start', now.date().isoformat())}" />
+                    <input type="time" id="nappy_change.start" name="start_time" class="time mini" required="required" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('start_time', now.time().strftime('%H:%M'))}" />
+                  </div>
+                  <span class="help-inline">${errors.get('start', '')}</span>
+                </div>
+              </div>
+
+            </fieldset>
+            <fieldset class="entryBabySpecific" tal:repeat="baby context.babies">
+              <legend>${baby.name}</legend>
+
+                <div tal:attributes="class errors.get('%s.contents' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="nappy_change.${baby.__name__}.contents">Contents:</label>
+                <div class="input">
+                  <select name="${baby.__name__}.contents" id="nappy_change.${baby.__name__}.contents" size="1" tal:define="selected data.get('%s.contents' % baby.__name__, None)" >
+                    <option value="none">None</option>
+                    <option value="wet" tal:attributes="selected 'selected' if selected == 'wet' else None">Wet</option>
+                    <option value="dirty" tal:attributes="selected 'selected' if selected == 'dirty' else None">Dirty</option>
+                  </select>
+                  <span class="help-inline">${errors.get('%s.contents' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+              <div tal:attributes="class errors.get('%s.note' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="nappy_change.${baby.__name__}.note">Note:</label>
+                <div class="input">
+                  <input name="${baby.__name__}.note" id="nappy_change.${baby.__name__}.note" type="text" value="${data.get('%s.note' % baby.__name__, '')}" />
+                  <span class="help-inline">${errors.get('%s.note' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+              <div tal:attributes="class errors.get('%s.end' % baby.__name__, None) is None and 'clearfix' or 'clearfix error'">
+                <label for="nappy_change.${baby.__name__}.end">End:</label>
+                <div class="input">
+                  <div class="inline-inputs">
+                    <input type="date" id="nappy_change.${baby.__name__}.end" name="${baby.__name__}.end" class="date small" value="${data.get('%s.end' % baby.__name__, now.date().isoformat())}" />
+                    <input type="time" id="nappy_change.${baby.__name__}.end_time" name="${baby.__name__}.end_time" class="time mini" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('%s.end_time' % baby.__name__, '')}" />
+                  </div>
+                  <span class="help-inline">${errors.get('%s.end' % baby.__name__, '')}</span>
+                </div>
+              </div>
+
+            </fieldset>
+
+            <div class="actions">
+              <input type="submit" class="btn large primary" name="btn.save" value="Save" />
+            </div>
+          </form>
         </div>
 
-      </form>
+
+      </div>
     </div>
     <div class="span5">
       <h3>Adding an entry</h3>

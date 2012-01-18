@@ -140,7 +140,8 @@ class UserViews(object):
         errors = {}
         response = {
             'errors': errors,
-            'now': datetime.datetime.now()
+            'now': datetime.datetime.now(),
+            'entry_type': '',
         }
         post = self.request.POST
 
@@ -152,19 +153,23 @@ class UserViews(object):
             start = "%s %s" % (start_date_str, start_time_str,)
             start_date = None
 
-            if not start:
-                errors['start'] = u"Start date and time is required"
+            typeErrors = errors[entry_type] = {}
 
-            if errors:
+            response['entry_type'] = entry_type;
+
+            if not start:
+                typeErrors['start'] = u"Start date and time is required"
+
+            if typeErrors:
                 self.request.session.flash(u"Unable to add entry. Please try again", queue='error')
                 return response
 
             try:
                 start_date = dateutil.parser.parse(start)
             except ValueError:
-                errors['start'] = u"Invalid start date or time"
+                typeErrors['start'] = u"Invalid start date or time"
 
-            if errors:
+            if typeErrors:
                 self.request.session.flash(u"Unable to add entry. Please try again", queue='error')
                 return response
 
@@ -176,6 +181,7 @@ class UserViews(object):
             entries = []
 
             for baby in self.request.context.babies:
+                babyErrors = {}
                 baby_name = baby.__name__
 
                 end_date = end = None
@@ -188,7 +194,7 @@ class UserViews(object):
                     try:
                         end_date = dateutil.parser.parse(end)
                     except ValueError:
-                        errors['end'] = u"Invalid end date or time"
+                        babyErrors['%s.end' % baby_name] = u"Invalid end date or time"
 
                 kwargs = {
                     'baby': baby,
@@ -201,8 +207,7 @@ class UserViews(object):
                     if (
                         key.startswith("%s." % baby_name) and
                         key not in kwargs and
-                        key not in ('%s.end_time' % baby_name) and
-                        value
+                        key not in ('%s.end_time' % baby_name)
                     ):
                         # Convert value to correct builtin type based on SQLAlchemy
                         # column spec
@@ -217,18 +222,21 @@ class UserViews(object):
 
                         try:
                             if type_ is datetime.timedelta:
-                                value = datetime.timedelta(minutes=int(value))
+                                value = datetime.timedelta(minutes=int(value or 0))
                             else:
                                 value = type_(value)
                         except (TypeError,AttributeError, ValueError,):
-                            errors[key] = u"Invalid value"
+                            babyErrors[key] = u"Invalid value"
 
                         kwargs[attr_name] = value
 
-                entry = factory(**kwargs)
-                entries.append(entry)
+                if not babyErrors:
+                    entry = factory(**kwargs)
+                    entries.append(entry)
 
-            if not errors:
+                typeErrors.update(babyErrors)
+
+            if not typeErrors:
                 session = models.DBSession()
                 for entry in entries:
                     session.add(entry)
@@ -237,10 +245,7 @@ class UserViews(object):
 
                 return HTTPFound(location=resource_path(self.request.context) + '/@@entries')
 
-        return {
-            'errors': errors,
-            'now': datetime.datetime.now(),
-        }
+        return response;
 
     @view_config(name='entries', renderer='babytracker:templates/entries.pt', permission=VIEW_PERMISSION)
     def entries(self):
