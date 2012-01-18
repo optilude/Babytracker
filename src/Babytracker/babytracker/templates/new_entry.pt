@@ -33,7 +33,7 @@ jQuery(function($) {
 <body>
 
   <div metal:fill-slot="page_header">
-    <h1>Record <small>new entry</small></h1>
+    <h1>Record <small>New entry</small></h1>
   </div>
   <div class="row" metal:fill-slot="body">
     <div class="span10">

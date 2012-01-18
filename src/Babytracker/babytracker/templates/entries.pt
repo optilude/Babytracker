@@ -163,8 +163,14 @@ jQuery(function($) {
       // Show modal dialogue with correct data when selecting an entry
       links.events.addListener(timeline, 'select', function(event) {
         var selection = timeline.getSelection();
-        var data = dataByDate[timelineDate.getTime()][selection[0].row];
+        var data = timeline.getData()[selection[0].row];
         var entry = data.entry;
+
+        // Keep track of where we are for the button handlers
+        $("#modify-entry").data('selectedIndex', selection[0].row);
+        $("#modify-entry").data('entry', entry);
+        $("#modify-entry").data('timelineDate', timelineDate);
+        $("#modify-entry").data('timeline', timeline);
 
         // Show the correct fields
         $("#modify-entry [data-entry-type]").each(function() {
@@ -191,9 +197,6 @@ jQuery(function($) {
         $("#modify-entry input[name='end']").val(formatDate(entry.end));
         $("#modify-entry input[name='end_time']").val(formatTime(entry.end));
 
-        // Set up form action
-        $("#modify-entry form").attr('action', entry.url);
-
         // Show baby name and entry type
         $("#modify-entry .entryTypeName").html(formatEntryType(entry));
         $("#modify-entry .babyName").html(data.group);
@@ -207,7 +210,9 @@ jQuery(function($) {
         $("#modify-entry button[name='btn.delete']").show();
         $("#modify-entry button[name='btn.confirm_delete']").hide();
         $("#modify-entry .delete-warning").hide();
+        $("#modify-entry .server-error").hide();
 
+        // Show the dialogue
         $("#modify-entry").modal('show');
 
       });
@@ -318,11 +323,12 @@ jQuery(function($) {
       return false;
     });
 
-    // TODO: Debug
     $("#modify-entry button[name='btn.confirm_delete']").click(function(event){
       event.preventDefault();
 
-      var url = $("#modify-entry form").attr('action');
+      var url = $("#modify-entry").data('entry').url;
+      var selectedIndex = $("#modify-entry").data('selectedIndex');
+      var timeline = $("#modify-entry").data('timeline');
 
       $.ajax({
         type: 'DELETE',
@@ -332,10 +338,11 @@ jQuery(function($) {
             withCredentials: true
         },
         success: function(data, textStatus, jqXHR) {
-            // TODO: Refresh timelines
+            timeline.deleteItem(selectedIndex);
+            $("#modify-entry").modal('hide');
         },
         error: function(jqXHR, textStatus, errorThrown) {
-            // TODO: Handle error
+            $("#modify-entry .server-error").show();
         }
       });
 
@@ -381,6 +388,10 @@ jQuery(function($) {
 
           <div class="alert-message warning delete-warning">
             <p><strong>Are you sure?</strong> The entry will be deleted permanently</p>
+          </div>
+
+          <div class="alert-message error server-error">
+            <p><strong>Error</strong> There was an error communicating with the server. Please try again later.</p>
           </div>
 
           <div class="clearfix">

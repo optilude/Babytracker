@@ -609,6 +609,9 @@ class BabyAPI(object):
 @view_defaults(context=models.Entry, route_name='api', renderer='json')
 class EntryAPI(object):
 
+    def __init__(self, request):
+        self.request = request
+
     @view_config(name='', request_method='OPTIONS')
     def options(self):
         self.request.response.headers['Access-Control-Allow-Methods'] = 'GET PUT DELETE'
