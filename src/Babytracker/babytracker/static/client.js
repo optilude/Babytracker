@@ -510,7 +510,7 @@ BabyTracker.Entry.prototype = {
     },
 
     /**
-     * Delete this baby object from the server
+     * Delete this entry object from the server
      * Callback is called with the parent Baby object.
      * Error callback is called in case of a failure with the HTTP
      * response code and the error information returned by the server.

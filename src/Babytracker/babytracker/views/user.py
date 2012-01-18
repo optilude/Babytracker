@@ -1,5 +1,6 @@
 from pyramid.view import view_config, view_defaults
 from pyramid.traversal import resource_path
+from pyramid.renderers import get_renderer
 from pyramid.httpexceptions import HTTPFound
 
 from babytracker.interfaces import VIEW_PERMISSION
@@ -14,7 +15,7 @@ class UserViews(object):
     def __init__(self, request):
         self.request = request
 
-    @view_config(name='', renderer='../templates/user.pt', permission=VIEW_PERMISSION)
+    @view_config(name='', renderer='babytracker:templates/user.pt', permission=VIEW_PERMISSION)
     def index(self):
 
         errors = {}
@@ -133,7 +134,7 @@ class UserViews(object):
             'errors': errors,
         }
 
-    @view_config(name='new-entry', renderer='../templates/new_entry.pt', permission=VIEW_PERMISSION)
+    @view_config(name='new-entry', renderer='babytracker:templates/new_entry.pt', permission=VIEW_PERMISSION)
     def new_entry(self):
 
         errors = {}
@@ -234,14 +235,14 @@ class UserViews(object):
 
                 self.request.session.flash(u"Entry added", queue="success")
 
-                return HTTPFound(location=resource_path(self.request.context) + '@@entries')
+                return HTTPFound(location=resource_path(self.request.context) + '/@@entries')
 
         return {
             'errors': errors,
             'now': datetime.datetime.now(),
         }
 
-    @view_config(name='entries', renderer='../templates/entries.pt', permission=VIEW_PERMISSION)
+    @view_config(name='entries', renderer='babytracker:templates/entries.pt', permission=VIEW_PERMISSION)
     def entries(self):
 
         today = datetime.date.today();

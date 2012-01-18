@@ -17,6 +17,8 @@ jQuery(function($) {
   var numTimlines = ${len(days)};                   // get number of timelines from server
   var numBabies = ${len(context.babies)};           // get number of babies from servers
 
+  var maxDate = end.clone().clearTime().add(1).day().add(-1).second();
+
   function formatEntry(entry) {
     var title = "";
     var details = [];
@@ -59,10 +61,51 @@ jQuery(function($) {
     return html;
   }
 
+  function formatDate(d) {
+    if(!d) return '';
+    return d.toISOString().slice(0,10);
+  }
+
+  function formatTime(d) {
+    if(!d) return '';
+    return d.toISOString().slice(11,16);
+  }
+
+  function formatEntryType(entry) {
+    switch(entry.entry_type) {
+      case 'breast_feed':
+        return 'Breast feed';
+        break;
+      case 'bottle_feed':
+        return 'Bottle feed';
+        break;
+      case 'mixed_feed':
+        return 'Mixed feed';
+        break;
+      case 'nappy_change':
+        return 'Nappy change';
+        break;
+      case 'sleep':
+        return 'Sleep';
+        break;
+      default:
+        return 'Entry';
+    }
+  }
+
   $(document).ready(function() {
 
     $(".date").dateinput({
       format: 'yyyy-mm-dd',
+    });
+
+    $("a.entryTitle").live('click', function() {
+      return false;
+    });
+
+    $("#modify-entry").modal({
+      backdrop: 'static',
+      keyboard: true
     });
 
     client.initialize();
@@ -83,20 +126,18 @@ jQuery(function($) {
     function registerTimeline(timelineDate, index) {
       // This is in its own function mainly so that we can
       // use a closure to get hold of the particular timeline
-      // instance in the event handler
+      // instance in the event handlers
 
       var opts = $.extend({}, timelineOptions);
       var timeline = new links.Timeline(document.getElementById('timeline-' + index))
       var data = dataByDate[timelineDate.getTime()] = [];
       timeline.draw(data, opts);
 
+      // Synchronise timelines
       links.events.addListener(timeline, 'rangechange', function(event) {
-        var thisTimeline = timeline; // get from closure
-        var thisTimelineDate = timelineDate; // get from closure
-
         for(var i = 0; i < numTimlines; ++i) {
           var otherTimelineDate = end.clone().add(-1 * i).days();
-          if(otherTimelineDate.getTime() == thisTimelineDate.getTime())
+          if(otherTimelineDate.getTime() == timelineDate.getTime())
             continue;
 
           var otherTimeline = timelines[otherTimelineDate.getTime()];
@@ -116,20 +157,73 @@ jQuery(function($) {
           }
 
           otherTimeline.setVisibleChartRange(otherStart, otherEnd);
-
         }
+      });
+
+      // Show modal dialogue with correct data when selecting an entry
+      links.events.addListener(timeline, 'select', function(event) {
+        var selection = timeline.getSelection();
+        var data = dataByDate[timelineDate.getTime()][selection[0].row];
+        var entry = data.entry;
+
+        // Show the correct fields
+        $("#modify-entry [data-entry-type]").each(function() {
+            var allowedTypes = $(this).attr('data-entry-type').split(" ");
+            if(allowedTypes.indexOf(entry.entry_type) == -1) {
+                $(this).hide();
+            } else {
+                $(this).show();
+            }
+        });
+
+        // Populate fields
+        $("#modify-entry input[name='start']").val(formatDate(entry.start));
+        $("#modify-entry input[name='start_time']").val(formatTime(entry.start));
+
+        $("#modify-entry input[name='note']").val(entry.note);
+
+        $("#modify-entry input[name='left_duration']").val(entry.left_duration || '');
+        $("#modify-entry input[name='right_duration']").val(entry.right_duration || '');
+        $("#modify-entry input[name='amount']").val(entry.amount || '');
+        $("#modify-entry input[name='duration']").val(entry.duration || '');
+        $("#modify-entry input[name='topup']").val(entry.topup || '');
+
+        $("#modify-entry input[name='end']").val(formatDate(entry.end));
+        $("#modify-entry input[name='end_time']").val(formatTime(entry.end));
+
+        // Set up form action
+        $("#modify-entry form").attr('action', entry.url);
+
+        // Show baby name and entry type
+        $("#modify-entry .entryTypeName").html(formatEntryType(entry));
+        $("#modify-entry .babyName").html(data.group);
+
+        // Disable all fields
+        $("#modify-entry input,select").attr('disabled', 'disabled');
+
+        // Set up buttons
+        $("#modify-entry button[name='btn.save']").hide();
+        $("#modify-entry button[name='btn.edit']").show();
+        $("#modify-entry button[name='btn.delete']").show();
+        $("#modify-entry button[name='btn.confirm_delete']").hide();
+        $("#modify-entry .delete-warning").hide();
+
+        $("#modify-entry").modal('show');
+
       });
 
       return timeline;
     }
 
+    // Create the timelines
     for(var i = 0; i < numTimlines; ++i) {
       var timelineDate = end.clone().add(-1 * i).days();
       timelines[timelineDate.getTime()] = registerTimeline(timelineDate, i);
     }
 
+    // Fetch entries and populate the timelines
     for(var i = 0; i < client.user.babies.length; ++i) {
-      client.user.babies[i].getEntries(start, end, null, function(baby, entries) {
+      client.user.babies[i].getEntries(start, maxDate, null, function(baby, entries) {
 
         var latestTimeByDate = {}; // timestamp -> datetime
 
@@ -156,10 +250,12 @@ jQuery(function($) {
             latestTimeByDate[key] = startDate;
 
           dataByDate[timelineDate.getTime()].unshift({
-            'group': baby.name,
-            'start': startDate,
-            'end': entry.end,
-            'content': formatEntry(entry),
+            group: baby.name,
+            start: startDate,
+            // don't set a timeline end date for entries < 30 minutes
+            end: (entry.end && ((entry.end - entry.start) / 60000) >= 30)? entry.end : null,
+            content: formatEntry(entry),
+            entry: entry // store the entry so we can access the full contents later
           });
         }
 
@@ -186,6 +282,65 @@ jQuery(function($) {
         alert("Error fetching entry data: " + error.error + ". This should not happen.");
       });
     }
+
+    // Actions for the modal dialogue to edit or delete entries
+
+    $("#modify-entry button[name='btn.cancel']").click(function(event){
+      event.preventDefault();
+      $("#modify-entry").modal('hide');
+      return false;
+    });
+
+    $("#modify-entry button[name='btn.edit']").click(function(event){
+      event.preventDefault();
+      $("#modify-entry input:disabled,select:disabled").removeAttr('disabled');
+      $("#modify-entry button[name='btn.delete']").hide();
+      $("#modify-entry button[name='btn.edit']").hide();
+      $("#modify-entry button[name='btn.save']").show();
+      return false;
+    });
+
+    $("#modify-entry button[name='btn.delete']").click(function(event){
+      event.preventDefault();
+      $("#modify-entry button[name='btn.delete']").hide();
+      $("#modify-entry button[name='btn.confirm_delete']").show();
+      $("#modify-entry button[name='btn.edit']").hide();
+      $("#modify-entry button[name='btn.save']").hide();
+      $("#modify-entry .delete-warning").show();
+      return false;
+    });
+
+    $("#modify-entry button[name='btn.save']").click(function(event){
+      event.preventDefault();
+
+      // TODO: Save logic
+
+      return false;
+    });
+
+    // TODO: Debug
+    $("#modify-entry button[name='btn.confirm_delete']").click(function(event){
+      event.preventDefault();
+
+      var url = $("#modify-entry form").attr('action');
+
+      $.ajax({
+        type: 'DELETE',
+        url: url,
+        dataType: 'json',
+        xhrFields: {
+            withCredentials: true
+        },
+        success: function(data, textStatus, jqXHR) {
+            // TODO: Refresh timelines
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            // TODO: Handle error
+        }
+      });
+
+      return false;
+    });
 
   });
 
@@ -215,6 +370,117 @@ jQuery(function($) {
       </div>
 
     </div>
+
+    <div id="modify-entry" class="modal hide fade" style="display: none; ">
+      <div class="modal-header">
+        <a href="#" class="close">×</a>
+        <h3><span class="entryTypeName">Entry</span> for <span class="babyName">baby</span></h3>
+      </div>
+      <form method="put" action="#">
+        <div class="modal-body">
+
+          <div class="alert-message warning delete-warning">
+            <p><strong>Are you sure?</strong> The entry will be deleted permanently</p>
+          </div>
+
+          <div class="clearfix">
+            <label for="start">Start</label>
+            <div class="input">
+              <div class="inline-inputs">
+                <input type="date" name="start" class="date small" required="required" value="" />
+                <input type="time" name="start_time" class="time mini" required="required" pattern="[0-9]{1,2}:[0-9]{1,2}" value="" />
+              </div>
+              <span class="help-inline"></span>
+            </div>
+          </div>
+
+          <div class="clearfix" data-entry-type="breast_feed mixed_feed">
+            <label for="left_duration">Left breast:</label>
+            <div class="input">
+              <input name="left_duration" id="left_duration" type="number" min="0" class="mini" />
+              <span class="help-inline">min</span>
+              <span class="help-inline"></span>
+            </div>
+          </div>
+
+          <div class="clearfix" data-entry-type="breast_feed mixed_feed">
+            <label for="right_duration">Right breast:</label>
+            <div class="input">
+              <input name="right_duration" id="right_duration" type="number" min="0" class="mini" />
+              <span class="help-inline">min</span>
+              <span class="help-inline"></span>
+            </div>
+          </div>
+
+          <div class="clearfix" data-entry-type="mixed_feed">
+            <label for="topup">Top-up:</label>
+            <div class="input">
+              <input name="topup" id="topup" type="number" min="0" class="mini" />
+              <span class="help-inline">ml</span>
+              <span class="help-inline"></span>
+            </div>
+          </div>
+
+          <div class="clearfix" data-entry-type="bottle_feed">
+            <label for="amount">Amount:</label>
+            <div class="input">
+              <input name="amount" id="amount" type="number" min="0" class="mini" />
+              <span class="help-inline">ml</span>
+              <span class="help-inline"></span>
+            </div>
+          </div>
+
+          <div class="clearfix" data-entry-type="sleep">
+            <label for="duration">Duration:</label>
+            <div class="input">
+              <input name="duration" id="duration" type="number" min="0" class="mini" />
+              <span class="help-inline">min</span>
+              <span class="help-inline"></span>
+            </div>
+          </div>
+
+          <div class="clearfix" data-entry-type="nappy_change">
+            <label for="contents">Contents:</label>
+            <div class="input">
+              <select name="contents" id="contents" size="1">
+                <option value="none">None</option>
+                <option value="wet">Wet</option>
+                <option value="dirty">Dirty</option>
+              </select>
+              <span class="help-inline"></span>
+            </div>
+          </div>
+
+          <div class="clearfix">
+            <label for="note">Note:</label>
+            <div class="input">
+              <input name="note" id="note" type="text" />
+              <span class="help-inline"></span>
+            </div>
+          </div>
+
+          <div class="clearfix">
+            <label for="end">End:</label>
+            <div class="input">
+              <div class="inline-inputs">
+                <input type="date" name="end" class="date small" value="" />
+                <input type="time" name="end_time" class="time mini" pattern="[0-9]{1,2}:[0-9]{1,2}" value="" />
+              </div>
+              <span class="help-inline"></span>
+            </div>
+          </div>
+
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn" name="btn.cancel">Cancel</button>
+          <button type="submit" class="btn danger" name="btn.delete">Delete</button>
+          <button type="submit" class="btn danger" name="btn.confirm_delete">Confirm</button>
+          <button type="submit" class="btn info" name="btn.edit">Edit</button>
+          <button type="submit" class="btn info" name="btn.save">Save</button>
+        </div>
+      </form>
+    </div>
+
   </div>
 
 </body>

@@ -301,7 +301,7 @@ class BottleFeed(Entry):
     # JSON representation
 
     def to_json_dict(self):
-        entry = super(BreastFeed, self).to_json_dict()
+        entry = super(BottleFeed, self).to_json_dict()
         entry.update({
             'amount': self.amount,
         })
@@ -344,7 +344,7 @@ class Sleep(Entry):
     # JSON representation
 
     def to_json_dict(self):
-        entry = super(BreastFeed, self).to_json_dict()
+        entry = super(Sleep, self).to_json_dict()
         entry.update({
             'duration': self.duration.seconds / 60,
         })
@@ -363,7 +363,7 @@ class NappyChange(Entry):
     # JSON representation
 
     def to_json_dict(self):
-        entry = super(BreastFeed, self).to_json_dict()
+        entry = super(NappyChange, self).to_json_dict()
         entry.update({
             'contents': self.contents,
         })
