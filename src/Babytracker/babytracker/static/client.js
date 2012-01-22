@@ -285,6 +285,9 @@ BabyTracker.Baby.prototype = {
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
 
+                // Fix date type
+                if(self.dob && typeof(self.dob) == 'string') self.dob = new Date(self.dob);
+
                 if(callback != undefined) {
                     callback(self);
                 }
@@ -318,6 +321,9 @@ BabyTracker.Baby.prototype = {
             async: async,
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
+
+                // Fix date type
+                if(self.dob && typeof(self.dob) == 'string') self.dob = new Date(self.dob);
 
                 if(callback != undefined) {
                     callback(self);
@@ -465,6 +471,10 @@ BabyTracker.Entry.prototype = {
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
 
+                // Fix date type
+                if(self.start && typeof(self.start) == 'string') self.start = new Date(self.start);
+                if(self.end && typeof(self.end) == 'string') self.end = new Date(self.end);
+
                 if(callback != undefined) {
                     callback(self);
                 }
@@ -498,6 +508,10 @@ BabyTracker.Entry.prototype = {
             async: async,
             success: function(data, textStatus, jqXHR) {
                 jQuery.extend(self, data);
+
+                // Fix date type
+                if(self.start && typeof(self.start) == 'string') self.start = new Date(self.start);
+                if(self.end && typeof(self.end) == 'string') self.end = new Date(self.end);
 
                 if(callback != undefined) {
                     callback(self);

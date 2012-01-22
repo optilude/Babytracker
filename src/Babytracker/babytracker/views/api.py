@@ -392,13 +392,15 @@ class BabyAPI(object):
 
         if start is not None:
             try:
-                start_date = dateutil.parser.parse(start)
+                # XXX: This is not very nice - we strip timezone to make naive dates
+                start_date = dateutil.parser.parse(start).replace(tzinfo=None)
             except ValueError:
                 return error_json(400, "Invalid start date", self.request)
 
         if end is not None:
             try:
-                end_date = dateutil.parser.parse(end)
+                # XXX: This is not very nice - we strip timezone to make naive dates
+                end_date = dateutil.parser.parse(end).replace(tzinfo=None)
             except ValueError:
                 return error_json(400, "Invalid end date", self.request)
 
@@ -563,13 +565,15 @@ class BabyAPI(object):
             return error_json(400, "JSON object with 'entry_type' and 'start' expected", self.request)
 
         try:
-            start_date = dateutil.parser.parse(start)
+            # XXX: This is not very nice - we strip timezone to make naive dates
+            start_date = dateutil.parser.parse(start).replace(tzinfo=None)
         except ValueError:
             return error_json(400, "Invalid start date", self.request)
 
         if end:
             try:
-                end_date = dateutil.parser.parse(end)
+                # XXX: This is not very nice - we strip timezone to make naive dates
+                end_date = dateutil.parser.parse(end).replace(tzinfo=None)
             except ValueError:
                 return error_json(400, "Invalid end date", self.request)
 
@@ -646,7 +650,7 @@ class EntryAPI(object):
 
     @view_config(name='', request_method='PUT', permission=EDIT_PERMISSION)
     def edit(self):
-        """Update the baby
+        """Update the entry
 
         PUT /api/test@example.org/jill/1
         {
@@ -693,29 +697,35 @@ class EntryAPI(object):
         entry = self.request.context
 
         if 'start' in body:
-            try:
-                start_date = dateutil.parser.parse(body['start'])
-            except ValueError:
-                return error_json(400, "Invalid start date", self.request)
+            start_date = None
+            if body['start'] is not None:
+                try:
+                    # XXX: This is not very nice - we strip timezone to make naive dates
+                    start_date = dateutil.parser.parse(body['start']).replace(tzinfo=None)
+                except ValueError:
+                    return error_json(400, "Invalid start date", self.request)
 
             entry.start = start_date
 
         if 'end' in body:
-            try:
-                end_date = dateutil.parser.parse(body['end'])
-            except ValueError:
-                return error_json(400, "Invalid end date", self.request)
+            end_date = None
+            if body['end'] is not None:
+                try:
+                    # XXX: This is not very nice - we strip timezone to make naive dates
+                    end_date = dateutil.parser.parse(body['end']).replace(tzinfo=None)
+                except ValueError:
+                    return error_json(400, "Invalid end date", self.request)
 
             entry.end = end_date
 
         if 'note' in body:
             note = body['note']
-            if not isinstance(note, basestring):
+            if note is not None and not isinstance(note, basestring):
                 return error_json(400, "Invalid note", self.request)
             entry.note = note
 
         for key, value in body.items():
-            if key not in ('id', 'type', 'start', 'end', 'note', 'baby', 'baby_id',):
+            if key not in ('id', 'type', 'start', 'end', 'note', 'baby', 'baby_id', 'url', 'entry_type',):
                 # Convert value to correct builtin type based on SQLAlchemy
                 # column spec
 
@@ -727,7 +737,7 @@ class EntryAPI(object):
 
                 try:
                     if type_ is datetime.timedelta:
-                        value = datetime.timedelta(minutes=int(value))
+                        value = datetime.timedelta(minutes=int(value or 0))
                     else:
                         value = type_(value)
                 except (TypeError,AttributeError, ValueError,), e:

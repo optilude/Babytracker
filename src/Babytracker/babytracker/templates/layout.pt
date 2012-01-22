@@ -12,6 +12,8 @@
 
   <script src="${request.static_url('babytracker:static/jquery-1.6.4.min.js')}"></script>
   <script src="${request.static_url('babytracker:static/jquery.tools/jquery.tools.min.js')}"></script>
+  <script src="${request.static_url('babytracker:static/jquery-validation-1.9.0/jquery.validate.min.js')}"></script>
+  <script src="${request.static_url('babytracker:static/jquery-validation-1.9.0/additional-methods.min.js')}"></script>
 
   <script src="${request.static_url('babytracker:static/bootstrap/js/bootstrap-alerts.js')}"></script>
   <script src="${request.static_url('babytracker:static/bootstrap/js/bootstrap-twipsy.js')}"></script>

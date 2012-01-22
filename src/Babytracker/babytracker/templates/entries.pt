@@ -108,10 +108,66 @@ jQuery(function($) {
       keyboard: true
     });
 
+    var modifyEntryValidator = $("#modify-entry form").validate({
+      errorClass: 'error',
+      validClass: '',
+      errorElement: 'span',
+      errorPlacement: function(error, element) {
+        error.appendTo(element.parents("div.input").first().children(".help-inline").last());
+      },
+      highlight: function (element, errorClass, validClass) {
+          $(element).parents(".clearfix").addClass(errorClass).removeClass(validClass);
+      },
+      unhighlight: function (element, errorClass, validClass) {
+          $(element).parents(".error").removeClass(errorClass).addClass(validClass);
+      },
+      rules: {
+        start: {
+          required: true,
+          dateISO: true
+        },
+        start_time: {
+          required: true,
+          time: true
+        },
+        end: {
+          dateISO: true
+        },
+        end_time: {
+          time: true,
+          required: function(element) {
+            return $("#modify-entry input[name='end']").val() != "";
+          }
+        },
+        left_duration: {
+          digits: true,
+          min: 0
+        },
+        right_duration: {
+          digits: true,
+          min: 0
+        },
+        amount: {
+          digits: true,
+          min: 0
+        },
+        topup: {
+          digits: true,
+          min: 0
+        },
+        duration: {
+          digits: true,
+          min: 0
+        },
+        contents: {
+        }
+      }
+    });
+
+
     client.initialize();
 
     var timelines = {}; // timestamp -> timeline
-    var dataByDate = {}; // timestamp -> array
     var timelineOptions = {
       width:  '100%',
       height: (50 + (75 * numBabies)) + "px",
@@ -130,7 +186,7 @@ jQuery(function($) {
 
       var opts = $.extend({}, timelineOptions);
       var timeline = new links.Timeline(document.getElementById('timeline-' + index))
-      var data = dataByDate[timelineDate.getTime()] = [];
+      var data = [];
       timeline.draw(data, opts);
 
       // Synchronise timelines
@@ -202,7 +258,7 @@ jQuery(function($) {
         $("#modify-entry .babyName").html(data.group);
 
         // Disable all fields
-        $("#modify-entry input,select").attr('disabled', 'disabled');
+        $("#modify-entry input, #modify-entry select").attr('disabled', 'disabled');
 
         // Set up buttons
         $("#modify-entry button[name='btn.save']").hide();
@@ -211,6 +267,10 @@ jQuery(function($) {
         $("#modify-entry button[name='btn.confirm_delete']").hide();
         $("#modify-entry .delete-warning").hide();
         $("#modify-entry .server-error").hide();
+        $("#modify-entry .client-error").hide();
+
+        modifyEntryValidator.resetForm();
+        $("#modify-entry form .clearfix .error").removeClass('error');
 
         // Show the dialogue
         $("#modify-entry").modal('show');
@@ -234,31 +294,30 @@ jQuery(function($) {
 
         for(var j = 0; j < entries.length; ++j) {
           var entry = entries[j];
-          var startDate = entry.start;
 
-          if(!startDate) {
+          if(!entry.start) {
             console.log("Start date is null - ignoring");
             continue;
           }
 
-          var timelineDate = startDate.clone().clearTime();
+          var timelineDate = entry.start.clone().clearTime();
           var key = timelineDate.getTime();
 
           var timeline = timelines[key];
           if(!timeline) {
-            console.log("Timeline not found for " + startDate.toDateString() + " - ignoring");
+            console.log("Timeline not found for " + entry.start.toDateString() + " - ignoring");
             continue;
           }
 
           // we get entries in reverse date order
           if(!latestTimeByDate[key])
-            latestTimeByDate[key] = startDate;
+            latestTimeByDate[key] = entry.start;
 
-          dataByDate[timelineDate.getTime()].unshift({
+          timeline.getData().unshift({
             group: baby.name,
-            start: startDate,
+            start: entry.start.clone(),
             // don't set a timeline end date for entries < 30 minutes
-            end: (entry.end && ((entry.end - entry.start) / 60000) >= 30)? entry.end : null,
+            end: (entry.end && ((entry.end - entry.start) / 60000) >= 30)? entry.end.clone() : null,
             content: formatEntry(entry),
             entry: entry // store the entry so we can access the full contents later
           });
@@ -266,7 +325,7 @@ jQuery(function($) {
 
         for(var key in timelines) {
           var timeline = timelines[key];
-          var data = dataByDate[key];
+          var data = timeline.getData();
 
           timeline.setAutoScale(false);
           timeline.setData(data);
@@ -318,7 +377,67 @@ jQuery(function($) {
     $("#modify-entry button[name='btn.save']").click(function(event){
       event.preventDefault();
 
-      // TODO: Save logic
+      var entry = $("#modify-entry").data('entry');
+      var selectedIndex = $("#modify-entry").data('selectedIndex');
+      var timeline = $("#modify-entry").data('timeline');
+
+
+      if(!modifyEntryValidator.form()) {
+        $("#modify-entry .client-error").show();
+        return false;
+      }
+      $("#modify-entry .client-error").hide();
+
+      // Update the entry with the form values
+      $("#modify-entry input, #modify-entry select").each(function() {
+
+        var name = $(this).attr('name');
+        if(name in entry) {
+
+          var value = $(this).is("select")? $("option:selected", this).attr('value') : $(this).val();
+          var type = $(this).attr('type');
+
+          if(type == 'number') {
+            try {
+              value = parseInt(value);
+            } catch(e) {
+              console.log(e);
+              return;
+            }
+          } else if($("#modify-entry input[name='" + name + "_time']").length > 0) {
+            var timeValue = $("#modify-entry input[name='" + name + "_time']").val();
+            if(!timeValue) {
+              value = null;
+            } else {
+              try {
+                value = new Date(value + "T" + timeValue);
+              } catch(e) {
+                console.log(e);
+                return;
+              }
+            }
+          }
+
+          entry[name] = value || null;
+        }
+      });
+
+      entry.save(function(entry) {
+        var data = timeline.getData();
+        var item = data[selectedIndex];
+
+        item.start = entry.start;
+        item.end = (entry.end && ((entry.end - entry.start) / 60000) >= 30)? entry.end : null;
+        item.content = formatEntry(entry);
+        item.entry = entry;
+
+        timeline.redraw();
+
+        $("#modify-entry").modal('hide');
+      }, function(status, error) {
+        console.log(error);
+        $("#modify-entry .server-error").show();
+      });
 
       return false;
     });
@@ -326,24 +445,16 @@ jQuery(function($) {
     $("#modify-entry button[name='btn.confirm_delete']").click(function(event){
       event.preventDefault();
 
-      var url = $("#modify-entry").data('entry').url;
+      var entry = $("#modify-entry").data('entry');
       var selectedIndex = $("#modify-entry").data('selectedIndex');
       var timeline = $("#modify-entry").data('timeline');
 
-      $.ajax({
-        type: 'DELETE',
-        url: url,
-        dataType: 'json',
-        xhrFields: {
-            withCredentials: true
-        },
-        success: function(data, textStatus, jqXHR) {
-            timeline.deleteItem(selectedIndex);
-            $("#modify-entry").modal('hide');
-        },
-        error: function(jqXHR, textStatus, errorThrown) {
-            $("#modify-entry .server-error").show();
-        }
+      entry.delete(function(baby) {
+        timeline.deleteItem(selectedIndex);
+        $("#modify-entry").modal('hide');
+      }, function(status, error) {
+        console.log(error);
+        $("#modify-entry .server-error").show();
       });
 
       return false;
@@ -371,9 +482,11 @@ jQuery(function($) {
         mouse wheel.
       </p>
 
+      <!-- TODO: Allow start/end date to be changed -->
+
       <div class="timelineDay" tal:repeat="day days">
         <h2>${day.strftime("%a %d %b %Y")}</h2>
-        <div id="timeline-${repeat['day'].index}">Please wait...</div>
+        <div class="timelineContainer" id="timeline-${repeat['day'].index}">Please wait...</div>
       </div>
 
     </div>
@@ -394,14 +507,18 @@ jQuery(function($) {
             <p><strong>Error</strong> There was an error communicating with the server. Please try again later.</p>
           </div>
 
+          <div class="alert-message error client-error">
+            <p><strong>Invalid input</strong> Please correct the errors indicated below before trying again.</p>
+          </div>
+
           <div class="clearfix">
             <label for="start">Start</label>
             <div class="input">
               <div class="inline-inputs">
                 <input type="date" name="start" class="date small" required="required" value="" />
-                <input type="time" name="start_time" class="time mini" required="required" pattern="[0-9]{1,2}:[0-9]{1,2}" value="" />
+                <input type="time" name="start_time" class="time mini" required="required" value="" />
               </div>
-              <span class="help-inline"></span>
+              <div class="help-inline"></div>
             </div>
           </div>
 
@@ -410,7 +527,7 @@ jQuery(function($) {
             <div class="input">
               <input name="left_duration" id="left_duration" type="number" min="0" class="mini" />
               <span class="help-inline">min</span>
-              <span class="help-inline"></span>
+              <div class="help-inline"></div>
             </div>
           </div>
 
@@ -419,7 +536,7 @@ jQuery(function($) {
             <div class="input">
               <input name="right_duration" id="right_duration" type="number" min="0" class="mini" />
               <span class="help-inline">min</span>
-              <span class="help-inline"></span>
+              <div class="help-inline"></div>
             </div>
           </div>
 
@@ -428,7 +545,7 @@ jQuery(function($) {
             <div class="input">
               <input name="topup" id="topup" type="number" min="0" class="mini" />
               <span class="help-inline">ml</span>
-              <span class="help-inline"></span>
+              <div class="help-inline"></div>
             </div>
           </div>
 
@@ -437,7 +554,7 @@ jQuery(function($) {
             <div class="input">
               <input name="amount" id="amount" type="number" min="0" class="mini" />
               <span class="help-inline">ml</span>
-              <span class="help-inline"></span>
+              <div class="help-inline"></div>
             </div>
           </div>
 
@@ -446,7 +563,7 @@ jQuery(function($) {
             <div class="input">
               <input name="duration" id="duration" type="number" min="0" class="mini" />
               <span class="help-inline">min</span>
-              <span class="help-inline"></span>
+              <div class="help-inline"></div>
             </div>
           </div>
 
@@ -458,7 +575,7 @@ jQuery(function($) {
                 <option value="wet">Wet</option>
                 <option value="dirty">Dirty</option>
               </select>
-              <span class="help-inline"></span>
+              <div class="help-inline"></div>
             </div>
           </div>
 
@@ -466,7 +583,7 @@ jQuery(function($) {
             <label for="note">Note:</label>
             <div class="input">
               <input name="note" id="note" type="text" />
-              <span class="help-inline"></span>
+              <div class="help-inline"></div>
             </div>
           </div>
 
@@ -475,9 +592,9 @@ jQuery(function($) {
             <div class="input">
               <div class="inline-inputs">
                 <input type="date" name="end" class="date small" value="" />
-                <input type="time" name="end_time" class="time mini" pattern="[0-9]{1,2}:[0-9]{1,2}" value="" />
+                <input type="time" name="end_time" class="time mini" value="" />
               </div>
-              <span class="help-inline"></span>
+              <div class="help-inline"></div>
             </div>
           </div>
 
