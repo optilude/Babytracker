@@ -17,11 +17,53 @@ jQuery(function($) {
     });
 
     var default_entry_type = "${entry_type}"; // get from server
+    var babyNames = ${repr([baby.__name__.encode('utf-8') for baby in context.babies])}; // get from server
     var hash = default_entry_type? "#" + default_entry_type : window.location.hash;
 
     if(hash) {
       $("#entry-type-selector li a[href='" + hash + "']").click();
     }
+
+    var validatorOptions = {
+      errorClass: 'error',
+      validClass: '',
+      errorElement: 'span',
+      errorPlacement: function(error, element) {
+        error.appendTo(element.parents("div.input").first().children(".help-inline").last());
+      },
+      highlight: function (element, errorClass, validClass) {
+          $(element).parents(".clearfix").addClass(errorClass).removeClass(validClass);
+      },
+      unhighlight: function (element, errorClass, validClass) {
+          $(element).parents(".error").removeClass(errorClass).addClass(validClass);
+      },
+      rules: {
+        start: {
+          required: true,
+          dateISO: true
+        },
+        start_time: {
+          required: true,
+          time: true
+        }
+      }
+    };
+
+    for(var i = 0; i < babyNames.length; ++i) {
+      var babyName = babyNames[i];
+
+      validatorOptions[babyName + ".end"]            = { dateISO: true };
+      validatorOptions[babyName + ".end_time"]       = { time: true };
+      validatorOptions[babyName + ".left_duration"]  = { digits: true, min: 0 };
+      validatorOptions[babyName + ".right_duration"] = { digits: true, min: 0 };
+      validatorOptions[babyName + ".amount"]         = { digits: true, min: 0 };
+      validatorOptions[babyName + ".topup"]          = { digits: true, min: 0 };
+      validatorOptions[babyName + ".duration"]       = { digits: true, min: 0 };
+    }
+
+    $("form").each(function() {
+      $(this).validate(validatorOptions);
+    });
 
   });
 
@@ -60,7 +102,7 @@ jQuery(function($) {
                 <div class="input">
                   <div class="inline-inputs">
                     <input type="date" id="breast_feed.start" name="start" class="date small" required="required" value="${data.get('start', now.date().isoformat())}" />
-                    <input type="time" id="breast_feed.start" name="start_time" class="time mini" required="required" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('start_time', now.time().strftime('%H:%M'))}" />
+                    <input type="time" id="breast_feed.start" name="start_time" class="time mini" required="required" value="${data.get('start_time', now.time().strftime('%H:%M'))}" />
                   </div>
                   <span class="help-inline">${errors.get('start', '')}</span>
                 </div>
@@ -101,7 +143,7 @@ jQuery(function($) {
                 <div class="input">
                   <div class="inline-inputs">
                     <input type="date" id="breast_feed.${baby.__name__}.end" name="${baby.__name__}.end" class="date small" value="${data.get('%s.end' % baby.__name__, now.date().isoformat())}" />
-                    <input type="time" id="breast_feed.${baby.__name__}.end_time" name="${baby.__name__}.end_time" class="time mini" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('%s.end_time' % baby.__name__, '')}" />
+                    <input type="time" id="breast_feed.${baby.__name__}.end_time" name="${baby.__name__}.end_time" class="time mini" value="${data.get('%s.end_time' % baby.__name__, '')}" />
                   </div>
                   <span class="help-inline">${errors.get('%s.end' % baby.__name__, '')}</span>
                 </div>
@@ -128,7 +170,7 @@ jQuery(function($) {
                 <div class="input">
                   <div class="inline-inputs">
                     <input type="date" id="bottle_feed.start" name="start" class="date small" required="required" value="${data.get('start', now.date().isoformat())}" />
-                    <input type="time" id="bottle_feed.start" name="start_time" class="time mini" required="required" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('start_time', now.time().strftime('%H:%M'))}" />
+                    <input type="time" id="bottle_feed.start" name="start_time" class="time mini" required="required" value="${data.get('start_time', now.time().strftime('%H:%M'))}" />
                   </div>
                   <span class="help-inline">${errors.get('start', '')}</span>
                 </div>
@@ -160,7 +202,7 @@ jQuery(function($) {
                 <div class="input">
                   <div class="inline-inputs">
                     <input type="date" id="bottle_feed.${baby.__name__}.end" name="${baby.__name__}.end" class="date small" value="${data.get('%s.end' % baby.__name__, now.date().isoformat())}" />
-                    <input type="time" id="bottle_feed.${baby.__name__}.end_time" name="${baby.__name__}.end_time" class="time mini" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('%s.end_time' % baby.__name__, '')}" />
+                    <input type="time" id="bottle_feed.${baby.__name__}.end_time" name="${baby.__name__}.end_time" class="time mini" value="${data.get('%s.end_time' % baby.__name__, '')}" />
                   </div>
                   <span class="help-inline">${errors.get('%s.end' % baby.__name__, '')}</span>
                 </div>
@@ -186,7 +228,7 @@ jQuery(function($) {
                 <div class="input">
                   <div class="inline-inputs">
                     <input type="date" id="mixed_feed.start" name="start" class="date small" required="required" value="${data.get('start', now.date().isoformat())}" />
-                    <input type="time" id="mixed_feed.start" name="start_time" class="time mini" required="required" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('start_time', now.time().strftime('%H:%M'))}" />
+                    <input type="time" id="mixed_feed.start" name="start_time" class="time mini" required="required" value="${data.get('start_time', now.time().strftime('%H:%M'))}" />
                   </div>
                   <span class="help-inline">${errors.get('start', '')}</span>
                 </div>
@@ -236,7 +278,7 @@ jQuery(function($) {
                 <div class="input">
                   <div class="inline-inputs">
                     <input type="date" id="mixed_feed.${baby.__name__}.end" name="${baby.__name__}.end" class="date small" value="${data.get('%s.end' % baby.__name__, now.date().isoformat())}" />
-                    <input type="time" id="mixed_feed.${baby.__name__}.end_time" name="${baby.__name__}.end_time" class="time mini" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('%s.end_time' % baby.__name__, '')}" />
+                    <input type="time" id="mixed_feed.${baby.__name__}.end_time" name="${baby.__name__}.end_time" class="time mini" value="${data.get('%s.end_time' % baby.__name__, '')}" />
                   </div>
                   <span class="help-inline">${errors.get('%s.end' % baby.__name__, '')}</span>
                 </div>
@@ -262,7 +304,7 @@ jQuery(function($) {
                 <div class="input">
                   <div class="inline-inputs">
                     <input type="date" id="sleep.start" name="start" class="date small" required="required" value="${data.get('start', now.date().isoformat())}" />
-                    <input type="time" id="sleep.start" name="start_time" class="time mini" required="required" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('start_time', now.time().strftime('%H:%M'))}" />
+                    <input type="time" id="sleep.start" name="start_time" class="time mini" required="required" value="${data.get('start_time', now.time().strftime('%H:%M'))}" />
                   </div>
                   <span class="help-inline">${errors.get('start', '')}</span>
                 </div>
@@ -294,7 +336,7 @@ jQuery(function($) {
                 <div class="input">
                   <div class="inline-inputs">
                     <input type="date" id="sleep.${baby.__name__}.end" name="${baby.__name__}.end" class="date small" value="${data.get('%s.end' % baby.__name__, now.date().isoformat())}" />
-                    <input type="time" id="sleep.${baby.__name__}.end_time" name="${baby.__name__}.end_time" class="time mini" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('%s.end_time' % baby.__name__, '')}" />
+                    <input type="time" id="sleep.${baby.__name__}.end_time" name="${baby.__name__}.end_time" class="time mini" value="${data.get('%s.end_time' % baby.__name__, '')}" />
                   </div>
                   <span class="help-inline">${errors.get('%s.end' % baby.__name__, '')}</span>
                 </div>
@@ -320,7 +362,7 @@ jQuery(function($) {
                 <div class="input">
                   <div class="inline-inputs">
                     <input type="date" id="nappy_change.start" name="start" class="date small" required="required" value="${data.get('start', now.date().isoformat())}" />
-                    <input type="time" id="nappy_change.start" name="start_time" class="time mini" required="required" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('start_time', now.time().strftime('%H:%M'))}" />
+                    <input type="time" id="nappy_change.start" name="start_time" class="time mini" required="required" value="${data.get('start_time', now.time().strftime('%H:%M'))}" />
                   </div>
                   <span class="help-inline">${errors.get('start', '')}</span>
                 </div>
@@ -355,7 +397,7 @@ jQuery(function($) {
                 <div class="input">
                   <div class="inline-inputs">
                     <input type="date" id="nappy_change.${baby.__name__}.end" name="${baby.__name__}.end" class="date small" value="${data.get('%s.end' % baby.__name__, now.date().isoformat())}" />
-                    <input type="time" id="nappy_change.${baby.__name__}.end_time" name="${baby.__name__}.end_time" class="time mini" pattern="[0-9]{1,2}:[0-9]{1,2}" value="${data.get('%s.end_time' % baby.__name__, '')}" />
+                    <input type="time" id="nappy_change.${baby.__name__}.end_time" name="${baby.__name__}.end_time" class="time mini" value="${data.get('%s.end_time' % baby.__name__, '')}" />
                   </div>
                   <span class="help-inline">${errors.get('%s.end' % baby.__name__, '')}</span>
                 </div>

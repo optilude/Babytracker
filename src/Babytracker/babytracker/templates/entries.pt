@@ -270,7 +270,7 @@ jQuery(function($) {
           timeline.setData(data);
           timeline.setScale(links.Timeline.StepDate.SCALE.MINUTE, 30);
 
-          var end = latestTimeByDate[key] || new Date(parseInt(key)).add(5).hours();
+          var end = latestTimeByDate[key]? latestTimeByDate[key].clone() : new Date(parseInt(key)).add(5).hours();
           var endHours = end.getHours();
           end.clearTime();
           end.setHours(endHours + 2);
