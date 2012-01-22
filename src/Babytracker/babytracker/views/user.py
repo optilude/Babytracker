@@ -250,13 +250,35 @@ class UserViews(object):
     @view_config(name='entries', renderer='babytracker:templates/entries.pt', permission=VIEW_PERMISSION)
     def entries(self):
 
-        today = datetime.date.today();
-        days = [today - datetime.timedelta(days=i) for i in range(7)]
+        toDate = datetime.date.today();
+        fromDate = toDate - datetime.timedelta(6)
+
+        if 'fromDate' in self.request.GET:
+            try:
+                fromDate = dateutil.parser.parse(self.request.GET['fromDate']).date()
+            except ValueError:
+                pass
+
+        if 'toDate' in self.request.GET:
+            try:
+                toDate = dateutil.parser.parse(self.request.GET['toDate']).date()
+            except ValueError:
+                pass
+
+        if fromDate > toDate:
+            fromDate_ = fromDate
+            fromDate = toDate
+            toDate = fromDate_
+
+
+        days = [toDate - datetime.timedelta(days=i) for i in range((toDate - fromDate).days + 1)]
 
         errors = {}
         response = {
             'errors': errors,
             'days': days,
+            'fromDate': fromDate,
+            'toDate': toDate,
         }
 
         return response

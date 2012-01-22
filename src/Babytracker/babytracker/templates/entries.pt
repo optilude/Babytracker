@@ -488,7 +488,19 @@ jQuery(function($) {
         mouse wheel.
       </p>
 
-      <!-- TODO: Allow start/end date to be changed -->
+      <form method="get" action="${request.resource_url(context)}@@entries" id="date-range" class="dateRange inline-form">
+
+        <span>Show entries</span>
+
+        <label for="fromDate">from</label>
+        <input type="date" name="fromDate" class="date small" required="required" value="${fromDate.isoformat()}" />
+
+        <label for="toDate">to</label>
+        <input type="date" name="toDate" class="date small" required="required" value="${toDate.isoformat()}" />
+
+        <input type="submit" class="btn small" value="Change" />
+
+      </form>
 
       <div class="timelineDay" tal:repeat="day days">
         <h2>${day.strftime("%a %d %b %Y")}</h2>

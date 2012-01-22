@@ -80,3 +80,7 @@ body {
   line-height: inherit;
   color: inherit;
 }
+
+.inline-form label {
+  float: none;
+}
