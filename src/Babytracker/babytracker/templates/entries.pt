@@ -56,8 +56,10 @@ jQuery(function($) {
     var html = "<h4>" + title + "</h4>";
     if(details.length > 0)
       html += "<small>(" + details.join(', ') + ")</small>";
-    if(entry.note)
+    if(entry.note) {
       html = '<a class="entryTitle" href="#" data-placement="above" rel="twipsy" title="' + entry.note + '">' + html + '</a>';
+    }
+
     return html;
   }
 
@@ -97,10 +99,6 @@ jQuery(function($) {
 
     $(".date").dateinput({
       format: 'yyyy-mm-dd',
-    });
-
-    $("a.entryTitle").live('click', function() {
-      return false;
     });
 
     $("#modify-entry").modal({
@@ -185,7 +183,9 @@ jQuery(function($) {
       // instance in the event handlers
 
       var opts = $.extend({}, timelineOptions);
-      var timeline = new links.Timeline(document.getElementById('timeline-' + index))
+      var elem = document.getElementById('timeline-' + index);
+      var timeline = new links.Timeline(elem)
+      $(elem).data('timeline', timeline);
       var data = [];
       timeline.draw(data, opts);
 
@@ -214,67 +214,6 @@ jQuery(function($) {
 
           otherTimeline.setVisibleChartRange(otherStart, otherEnd);
         }
-      });
-
-      // Show modal dialogue with correct data when selecting an entry
-      links.events.addListener(timeline, 'select', function(event) {
-        var selection = timeline.getSelection();
-        var data = timeline.getData()[selection[0].row];
-        var entry = data.entry;
-
-        // Keep track of where we are for the button handlers
-        $("#modify-entry").data('selectedIndex', selection[0].row);
-        $("#modify-entry").data('entry', entry);
-        $("#modify-entry").data('timelineDate', timelineDate);
-        $("#modify-entry").data('timeline', timeline);
-
-        // Show the correct fields
-        $("#modify-entry [data-entry-type]").each(function() {
-            var allowedTypes = $(this).attr('data-entry-type').split(" ");
-            if(allowedTypes.indexOf(entry.entry_type) == -1) {
-                $(this).hide();
-            } else {
-                $(this).show();
-            }
-        });
-
-        // Populate fields
-        $("#modify-entry input[name='start']").val(formatDate(entry.start));
-        $("#modify-entry input[name='start_time']").val(formatTime(entry.start));
-
-        $("#modify-entry input[name='note']").val(entry.note);
-
-        $("#modify-entry input[name='left_duration']").val(entry.left_duration || '');
-        $("#modify-entry input[name='right_duration']").val(entry.right_duration || '');
-        $("#modify-entry input[name='amount']").val(entry.amount || '');
-        $("#modify-entry input[name='duration']").val(entry.duration || '');
-        $("#modify-entry input[name='topup']").val(entry.topup || '');
-
-        $("#modify-entry input[name='end']").val(formatDate(entry.end));
-        $("#modify-entry input[name='end_time']").val(formatTime(entry.end));
-
-        // Show baby name and entry type
-        $("#modify-entry .entryTypeName").html(formatEntryType(entry));
-        $("#modify-entry .babyName").html(data.group);
-
-        // Disable all fields
-        $("#modify-entry input, #modify-entry select").attr('disabled', 'disabled');
-
-        // Set up buttons
-        $("#modify-entry button[name='btn.save']").hide();
-        $("#modify-entry button[name='btn.edit']").show();
-        $("#modify-entry button[name='btn.delete']").show();
-        $("#modify-entry button[name='btn.confirm_delete']").hide();
-        $("#modify-entry .delete-warning").hide();
-        $("#modify-entry .server-error").hide();
-        $("#modify-entry .client-error").hide();
-
-        modifyEntryValidator.resetForm();
-        $("#modify-entry form .clearfix .error").removeClass('error');
-
-        // Show the dialogue
-        $("#modify-entry").modal('show');
-
       });
 
       return timeline;
@@ -311,7 +250,7 @@ jQuery(function($) {
 
           // we get entries in reverse date order
           if(!latestTimeByDate[key])
-            latestTimeByDate[key] = entry.start;
+            latestTimeByDate[key] = entry.start.clone();
 
           timeline.getData().unshift({
             group: baby.name,
@@ -346,6 +285,73 @@ jQuery(function($) {
         alert("Error fetching entry data: " + error.error + ". This should not happen.");
       });
     }
+
+    // Trigger modal dialogue
+
+    $(".timeline-event").live('click', function(event) {
+      event.preventDefault();
+
+      var timeline = $(this).parents(".timelineContainer").data('timeline');
+      var selection = timeline.getSelection();
+      var data = timeline.getData()[selection[0].row];
+      var entry = data.entry;
+
+      // Keep track of where we are for the button handlers
+      $("#modify-entry").data('selectedIndex', selection[0].row);
+      $("#modify-entry").data('entry', entry);
+      $("#modify-entry").data('timelineDate', timelineDate);
+      $("#modify-entry").data('timeline', timeline);
+
+      // Show the correct fields
+      $("#modify-entry [data-entry-type]").each(function() {
+          var allowedTypes = $(this).attr('data-entry-type').split(" ");
+          if(allowedTypes.indexOf(entry.entry_type) == -1) {
+              $(this).hide();
+          } else {
+              $(this).show();
+          }
+      });
+
+      // Populate fields
+      $("#modify-entry input[name='start']").val(formatDate(entry.start));
+      $("#modify-entry input[name='start_time']").val(formatTime(entry.start));
+
+      $("#modify-entry input[name='note']").val(entry.note);
+
+      $("#modify-entry input[name='left_duration']").val(entry.left_duration || '');
+      $("#modify-entry input[name='right_duration']").val(entry.right_duration || '');
+      $("#modify-entry input[name='amount']").val(entry.amount || '');
+      $("#modify-entry input[name='duration']").val(entry.duration || '');
+      $("#modify-entry input[name='topup']").val(entry.topup || '');
+
+      $("#modify-entry input[name='end']").val(formatDate(entry.end));
+      $("#modify-entry input[name='end_time']").val(formatTime(entry.end));
+
+      // Show baby name and entry type
+      $("#modify-entry .entryTypeName").html(formatEntryType(entry));
+      $("#modify-entry .babyName").html(data.group);
+
+      // Disable all fields
+      $("#modify-entry input, #modify-entry select").attr('disabled', 'disabled');
+
+      // Set up buttons
+      $("#modify-entry button[name='btn.save']").hide();
+      $("#modify-entry button[name='btn.edit']").show();
+      $("#modify-entry button[name='btn.delete']").show();
+      $("#modify-entry button[name='btn.confirm_delete']").hide();
+      $("#modify-entry .delete-warning").hide();
+      $("#modify-entry .server-error").hide();
+      $("#modify-entry .client-error").hide();
+
+      modifyEntryValidator.resetForm();
+      $("#modify-entry form .clearfix .error").removeClass('error');
+
+      // Show the dialogue
+      $("#modify-entry").modal('show');
+
+
+      return false;
+    });
 
     // Actions for the modal dialogue to edit or delete entries
 
@@ -426,8 +432,8 @@ jQuery(function($) {
         var data = timeline.getData();
         var item = data[selectedIndex];
 
-        item.start = entry.start;
-        item.end = (entry.end && ((entry.end - entry.start) / 60000) >= 30)? entry.end : null;
+        item.start = entry.start.clone();
+        item.end = (entry.end && ((entry.end - entry.start) / 60000) >= 30)? entry.end.clone() : null;
         item.content = formatEntry(entry);
         item.entry = entry;
 
